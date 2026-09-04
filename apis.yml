@@ -1,0 +1,50 @@
+name: Scanverity Resolution API
+description: >-
+  An independent Polymarket intelligence platform (operated by KotIQ OÜ) providing resolution-risk assessments on
+  prediction markets via a documented, OpenAPI 3.1-specified REST API. The API is in private beta / feature-gated; live
+  calls require an entitled, allowlisted account. Read-only research only — no order placement or trading advice.
+url: https://raw.githubusercontent.com/api-evangelist/scanverity-resolution-api/refs/heads/main/apis.yml
+created: '2026-09-04'
+modified: '2026-09-04'
+specificationVersion: '0.21'
+tags:
+  - Prediction Markets
+  - Resolution Risk
+  - Market Intelligence
+  - Due Diligence
+  - Webhooks
+  - OpenAPI
+  - Fintech
+  - Risk Analytics
+apis:
+  - name: Scanverity Resolution API
+    description: >-
+      REST API (OpenAPI 3.1, contract v1.3.0-private-beta) for resolution-risk assessment on prediction markets.
+      Versioned under /v1, JSON bodies, Bearer token auth (svr_live_/svr_sandbox_ prefixes), async create-and-poll model
+      with signed webhooks. Private beta / feature-gated.
+    humanURL: https://scanverity.com/resolution-api/docs
+    baseURL: https://scanverity.com
+    tags:
+      - Prediction Markets
+      - Resolution Risk
+      - Market Intelligence
+      - Due Diligence
+      - Webhooks
+      - OpenAPI
+      - Fintech
+      - Risk Analytics
+    properties:
+      - type: OpenAPI
+        url: https://scanverity.com/resolution-api/openapi.json
+      - type: Documentation
+        url: https://scanverity.com/resolution-api/docs
+      - type: LLMsTxt
+        url: https://scanverity.com/llms.txt
+maintainers:
+  - FN: KotIQ OÜ (Scanverity)
+    url: https://scanverity.com/en/resolution-api
+generated:
+  by: apis.io/add
+  model: claude-opus-4-8
+  confidence: 95
+  at: '2026-09-04T10:04:52.904Z'
