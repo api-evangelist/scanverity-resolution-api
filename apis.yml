@@ -1,12 +1,20 @@
 name: Scanverity Resolution API
 description: >-
-  An independent Polymarket intelligence platform (operated by KotIQ OÜ) providing resolution-risk assessments on
-  prediction markets via a documented, OpenAPI 3.1-specified REST API. The API is in private beta / feature-gated; live
-  calls require an entitled, allowlisted account. Read-only research only — no order placement or trading advice.
+  An independent Polymarket intelligence platform, operated by KotIQ OÜ, providing resolution-risk
+  assessments on prediction markets through a documented OpenAPI 3.1 REST API. Resolution risk is
+  the chance a market settles in a way its title does not lead a reader to expect — ambiguous rule
+  language, an unverifiable resolution source, or a title that diverges from the rules. The API is
+  an async create-and-poll surface with signed webhooks, a deterministic sandbox fixture catalog, a
+  reconciled usage ledger, four deny-by-default token scopes and a required Idempotency-Key on its
+  only billable write. The contract, an APIs.json index and an RFC 9727 api-catalog are all publicly
+  retrievable; runtime access is private beta and feature-gated, so live calls require an entitled,
+  allowlisted account. Read-only research only — no order placement, no custody, no trading advice.
+image: https://scanverity.com/icon-512.png
 url: https://raw.githubusercontent.com/api-evangelist/scanverity-resolution-api/refs/heads/main/apis.yml
 created: '2026-09-04'
 modified: '2026-09-04'
 specificationVersion: '0.21'
+position: Producing
 tags:
   - Prediction Markets
   - Resolution Risk
@@ -16,12 +24,19 @@ tags:
   - OpenAPI
   - Fintech
   - Risk Analytics
+  - Polymarket
+  - Event Contracts
+  - Agent Ready
 apis:
   - name: Scanverity Resolution API
     description: >-
-      REST API (OpenAPI 3.1, contract v1.3.0-private-beta) for resolution-risk assessment on prediction markets.
-      Versioned under /v1, JSON bodies, Bearer token auth (svr_live_/svr_sandbox_ prefixes), async create-and-poll model
-      with signed webhooks. Private beta / feature-gated.
+      REST API (OpenAPI 3.1, contract v1.3.0-private-beta) for resolution-risk assessment on
+      prediction markets. Versioned under /v1, JSON bodies, HTTP Bearer auth with reveal-once
+      environment-bound tokens (svr_live_ / svr_sandbox_ prefixes), an async create-and-poll model
+      with three terminal states (released, withheld, failed), signed HMAC-SHA256 webhooks with
+      append-only delivery evidence, and a cursor-paginated reconciled usage ledger. Private beta
+      and feature-gated.
+    image: https://scanverity.com/icon-512.png
     humanURL: https://scanverity.com/resolution-api/docs
     baseURL: https://scanverity.com
     tags:
@@ -35,16 +50,95 @@ apis:
       - Risk Analytics
     properties:
       - type: OpenAPI
+        url: openapi/scanverity-resolution-api-openapi.json
+      - type: OpenAPI
         url: https://scanverity.com/resolution-api/openapi.json
       - type: Documentation
         url: https://scanverity.com/resolution-api/docs
-      - type: LLMsTxt
-        url: https://scanverity.com/llms.txt
+      - type: APIReference
+        url: https://scanverity.com/resolution-api/docs
+      - type: Authentication
+        url: authentication/scanverity-resolution-api-authentication.yml
+      - type: OAuthScopes
+        url: scopes/scanverity-resolution-api-scopes.yml
+      - type: Conventions
+        url: conventions/scanverity-resolution-api-conventions.yml
+      - type: Idempotency
+        url: conventions/scanverity-resolution-api-conventions.yml
+      - type: ErrorCatalog
+        url: errors/scanverity-resolution-api-problem-types.yml
+      - type: RateLimits
+        url: rate-limits/scanverity-resolution-api-rate-limits.yml
+      - type: Plans
+        url: plans/scanverity-resolution-api-plans-pricing.yml
+      - type: Sandbox
+        url: sandbox/scanverity-resolution-api-sandbox.yml
+      - type: Lifecycle
+        url: lifecycle/scanverity-resolution-api-lifecycle.yml
+      - type: Deprecation
+        url: lifecycle/scanverity-resolution-api-lifecycle.yml
+      - type: Webhooks
+        url: asyncapi/scanverity-resolution-api-webhooks.yml
+      - type: DataModel
+        url: data-model/scanverity-resolution-api-data-model.yml
+      - type: Examples
+        url: examples/scanverity-resolution-api-examples.json
+      - type: Overlay
+        url: overlays/scanverity-resolution-api-resolution-api-overlay.yaml
+      - type: Conformance
+        url: conformance/scanverity-resolution-api-conformance.yml
+      - type: AgentSkill
+        url: skills/_index.yml
+      - type: X-MCPServerCandidate
+        url: mcp/scanverity-resolution-api-mcp.yml
+      - type: Packages
+        url: packages/scanverity-resolution-api-packages.yml
 maintainers:
   - FN: KotIQ OÜ (Scanverity)
+    email: research@scanverity.com
     url: https://scanverity.com/en/resolution-api
-generated:
+x-generated:
   by: apis.io/add
   model: claude-opus-4-8
   confidence: 95
   at: '2026-09-04T10:04:52.904Z'
+common:
+- type: Website
+  url: https://www.scanverity.com/
+- type: DomainSecurity
+  url: security/scanverity-resolution-api-domain-security.yml
+- type: DeveloperPortal
+  url: https://scanverity.com/en/resolution-api
+- type: Documentation
+  url: https://scanverity.com/resolution-api/docs
+- type: APIReference
+  url: https://scanverity.com/resolution-api/docs
+- type: LLMsTxt
+  url: llms/scanverity-resolution-api-llms.txt
+- type: WellKnown
+  url: well-known/scanverity-resolution-api-well-known.yml
+- type: APICatalog
+  url: well-known/scanverity-resolution-api-api-catalog.json
+- type: X-APIsJSON
+  url: https://scanverity.com/apis.json
+- type: Pricing
+  url: https://scanverity.com/en/pricing
+- type: SignUp
+  url: https://scanverity.com/en/signup
+- type: Login
+  url: https://scanverity.com/en/login
+- type: TermsOfService
+  url: https://scanverity.com/en/legal/resolution-api-addendum
+- type: PrivacyPolicy
+  url: https://scanverity.com/en/legal/privacy
+- type: Support
+  url: https://scanverity.com/en/contact
+- type: Blog
+  url: https://scanverity.com/research
+- type: BlogRSS
+  url: https://scanverity.com/feed.xml
+x-enrichment:
+  date: '2026-09-04'
+  status: enriched
+  artifacts_added: 26
+  pass: local-v3
