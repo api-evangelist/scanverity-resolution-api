@@ -20,6 +20,18 @@ tags:
   - Resolution Risk
   - Market Intelligence
   - Due Diligence
+  - Webhook
+  - OpenAPI
+  - Fintech
+  - Risk Analytics
+  - Polymarket
+  - Event Contracts
+  - Agent Ready
+tags_raw:
+  - Prediction Markets
+  - Resolution Risk
+  - Market Intelligence
+  - Due Diligence
   - Webhooks
   - OpenAPI
   - Fintech
@@ -28,71 +40,147 @@ tags:
   - Event Contracts
   - Agent Ready
 apis:
-  - name: Scanverity Resolution API
-    description: >-
-      REST API (OpenAPI 3.1, contract v1.3.0-private-beta) for resolution-risk assessment on
-      prediction markets. Versioned under /v1, JSON bodies, HTTP Bearer auth with reveal-once
-      environment-bound tokens (svr_live_ / svr_sandbox_ prefixes), an async create-and-poll model
-      with three terminal states (released, withheld, failed), signed HMAC-SHA256 webhooks with
-      append-only delivery evidence, and a cursor-paginated reconciled usage ledger. Private beta
-      and feature-gated.
-    image: https://scanverity.com/icon-512.png
-    humanURL: https://scanverity.com/resolution-api/docs
-    baseURL: https://scanverity.com
-    tags:
-      - Prediction Markets
-      - Resolution Risk
-      - Market Intelligence
-      - Due Diligence
-      - Webhooks
-      - OpenAPI
-      - Fintech
-      - Risk Analytics
-    properties:
-      - type: OpenAPI
-        url: openapi/scanverity-resolution-api-openapi.json
-      - type: OpenAPI
-        url: https://scanverity.com/resolution-api/openapi.json
-      - type: Documentation
-        url: https://scanverity.com/resolution-api/docs
-      - type: APIReference
-        url: https://scanverity.com/resolution-api/docs
-      - type: Authentication
-        url: authentication/scanverity-resolution-api-authentication.yml
-      - type: OAuthScopes
-        url: scopes/scanverity-resolution-api-scopes.yml
-      - type: Conventions
-        url: conventions/scanverity-resolution-api-conventions.yml
-      - type: Idempotency
-        url: conventions/scanverity-resolution-api-conventions.yml
-      - type: ErrorCatalog
-        url: errors/scanverity-resolution-api-problem-types.yml
-      - type: RateLimits
-        url: rate-limits/scanverity-resolution-api-rate-limits.yml
-      - type: Plans
-        url: plans/scanverity-resolution-api-plans-pricing.yml
-      - type: Sandbox
-        url: sandbox/scanverity-resolution-api-sandbox.yml
-      - type: Lifecycle
-        url: lifecycle/scanverity-resolution-api-lifecycle.yml
-      - type: Deprecation
-        url: lifecycle/scanverity-resolution-api-lifecycle.yml
-      - type: Webhooks
-        url: asyncapi/scanverity-resolution-api-webhooks.yml
-      - type: DataModel
-        url: data-model/scanverity-resolution-api-data-model.yml
-      - type: Examples
-        url: examples/scanverity-resolution-api-examples.json
-      - type: Overlay
-        url: overlays/scanverity-resolution-api-resolution-api-overlay.yaml
-      - type: Conformance
-        url: conformance/scanverity-resolution-api-conformance.yml
-      - type: AgentSkill
-        url: skills/_index.yml
-      - type: X-MCPServerCandidate
-        url: mcp/scanverity-resolution-api-mcp.yml
-      - type: Packages
-        url: packages/scanverity-resolution-api-packages.yml
+- aid: scanverity-resolution-api:scanverity-resolution-api-resolution-assessments-api
+  name: Scanverity Resolution API Resolution assessments API
+  description: Create and poll account-scoped assessment resources.
+  humanURL: https://scanverity.com/resolution-api/docs
+  baseURL: https://scanverity.com
+  tags:
+  - Resolution assessments
+  properties:
+  - type: OpenAPI
+    url: openapi/scanverity-resolution-api-resolution-assessments-api-openapi.yml
+  - type: Documentation
+    url: https://scanverity.com/resolution-api/docs
+  - type: APIReference
+    url: https://scanverity.com/resolution-api/docs
+  - type: Authentication
+    url: authentication/scanverity-resolution-api-authentication.yml
+  - type: OAuthScopes
+    url: scopes/scanverity-resolution-api-scopes.yml
+  - type: Conventions
+    url: conventions/scanverity-resolution-api-conventions.yml
+  - type: Idempotency
+    url: conventions/scanverity-resolution-api-conventions.yml
+  - type: ErrorCatalog
+    url: errors/scanverity-resolution-api-problem-types.yml
+  - type: RateLimits
+    url: rate-limits/scanverity-resolution-api-rate-limits.yml
+  - type: Plans
+    url: plans/scanverity-resolution-api-plans-pricing.yml
+  - type: Sandbox
+    url: sandbox/scanverity-resolution-api-sandbox.yml
+  - type: Lifecycle
+    url: lifecycle/scanverity-resolution-api-lifecycle.yml
+  - type: Deprecation
+    url: lifecycle/scanverity-resolution-api-lifecycle.yml
+  - type: Webhooks
+    url: asyncapi/scanverity-resolution-api-webhooks.yml
+  - type: DataModel
+    url: data-model/scanverity-resolution-api-data-model.yml
+  - type: Examples
+    url: examples/scanverity-resolution-api-examples.json
+  - type: Conformance
+    url: conformance/scanverity-resolution-api-conformance.yml
+  - type: X-MCPServerCandidate
+    url: mcp/scanverity-resolution-api-mcp.yml
+  - type: Packages
+    url: packages/scanverity-resolution-api-packages.yml
+- aid: scanverity-resolution-api:scanverity-resolution-api-resolution-usage-api
+  name: Scanverity Resolution API Resolution usage API
+  description: >-
+    Read account-scoped monthly reconciled usage totals and their cursor-paginated evidence events.
+  humanURL: https://scanverity.com/resolution-api/docs
+  baseURL: https://scanverity.com
+  tags:
+  - Resolution usage
+  properties:
+  - type: OpenAPI
+    url: openapi/scanverity-resolution-api-resolution-usage-api-openapi.yml
+  - type: Documentation
+    url: https://scanverity.com/resolution-api/docs
+  - type: APIReference
+    url: https://scanverity.com/resolution-api/docs
+  - type: Authentication
+    url: authentication/scanverity-resolution-api-authentication.yml
+  - type: OAuthScopes
+    url: scopes/scanverity-resolution-api-scopes.yml
+  - type: Conventions
+    url: conventions/scanverity-resolution-api-conventions.yml
+  - type: Idempotency
+    url: conventions/scanverity-resolution-api-conventions.yml
+  - type: ErrorCatalog
+    url: errors/scanverity-resolution-api-problem-types.yml
+  - type: RateLimits
+    url: rate-limits/scanverity-resolution-api-rate-limits.yml
+  - type: Plans
+    url: plans/scanverity-resolution-api-plans-pricing.yml
+  - type: Sandbox
+    url: sandbox/scanverity-resolution-api-sandbox.yml
+  - type: Lifecycle
+    url: lifecycle/scanverity-resolution-api-lifecycle.yml
+  - type: Deprecation
+    url: lifecycle/scanverity-resolution-api-lifecycle.yml
+  - type: Webhooks
+    url: asyncapi/scanverity-resolution-api-webhooks.yml
+  - type: DataModel
+    url: data-model/scanverity-resolution-api-data-model.yml
+  - type: Examples
+    url: examples/scanverity-resolution-api-examples.json
+  - type: Conformance
+    url: conformance/scanverity-resolution-api-conformance.yml
+  - type: X-MCPServerCandidate
+    url: mcp/scanverity-resolution-api-mcp.yml
+  - type: Packages
+    url: packages/scanverity-resolution-api-packages.yml
+- aid: scanverity-resolution-api:scanverity-resolution-api-webhook-endpoints-api
+  name: Scanverity Resolution API Webhook endpoints API
+  description: >-
+    Register account- and environment-scoped signed endpoints, inspect append-only delivery evidence and
+    request non-billable redelivery.
+  humanURL: https://scanverity.com/resolution-api/docs
+  baseURL: https://scanverity.com
+  tags:
+  - Webhook endpoints
+  properties:
+  - type: OpenAPI
+    url: openapi/scanverity-resolution-api-webhook-endpoints-api-openapi.yml
+  - type: Documentation
+    url: https://scanverity.com/resolution-api/docs
+  - type: APIReference
+    url: https://scanverity.com/resolution-api/docs
+  - type: Authentication
+    url: authentication/scanverity-resolution-api-authentication.yml
+  - type: OAuthScopes
+    url: scopes/scanverity-resolution-api-scopes.yml
+  - type: Conventions
+    url: conventions/scanverity-resolution-api-conventions.yml
+  - type: Idempotency
+    url: conventions/scanverity-resolution-api-conventions.yml
+  - type: ErrorCatalog
+    url: errors/scanverity-resolution-api-problem-types.yml
+  - type: RateLimits
+    url: rate-limits/scanverity-resolution-api-rate-limits.yml
+  - type: Plans
+    url: plans/scanverity-resolution-api-plans-pricing.yml
+  - type: Sandbox
+    url: sandbox/scanverity-resolution-api-sandbox.yml
+  - type: Lifecycle
+    url: lifecycle/scanverity-resolution-api-lifecycle.yml
+  - type: Deprecation
+    url: lifecycle/scanverity-resolution-api-lifecycle.yml
+  - type: Webhooks
+    url: asyncapi/scanverity-resolution-api-webhooks.yml
+  - type: DataModel
+    url: data-model/scanverity-resolution-api-data-model.yml
+  - type: Examples
+    url: examples/scanverity-resolution-api-examples.json
+  - type: Conformance
+    url: conformance/scanverity-resolution-api-conformance.yml
+  - type: X-MCPServerCandidate
+    url: mcp/scanverity-resolution-api-mcp.yml
+  - type: Packages
+    url: packages/scanverity-resolution-api-packages.yml
 maintainers:
   - FN: KotIQ OÜ (Scanverity)
     email: research@scanverity.com
@@ -103,6 +191,10 @@ x-generated:
   confidence: 95
   at: '2026-09-04T10:04:52.904Z'
 common:
+- type: Overlay
+  url: overlays/scanverity-resolution-api-resolution-api-overlay.yaml
+- type: AgentSkill
+  url: skills/_index.yml
 - type: Website
   url: https://www.scanverity.com/
 - type: DomainSecurity
