@@ -141,6 +141,8 @@ apis:
   humanURL: https://scanverity.com/resolution-api/docs
   baseURL: https://scanverity.com
   tags:
+  - Webhook Endpoints
+  tags_raw:
   - Webhook endpoints
   properties:
   - type: OpenAPI
