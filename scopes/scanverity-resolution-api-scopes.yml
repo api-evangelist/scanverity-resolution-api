@@ -1,0 +1,49 @@
+generated: '2026-09-04'
+method: searched
+source: https://scanverity.com/resolution-api/docs
+derived_from: openapi/scanverity-resolution-api-openapi.json
+name: Scanverity Resolution API scopes
+description: >-
+  Four named, deny-by-default scopes bound to the opaque bearer token at issue time. IMPORTANT --
+  this is NOT OAuth 2.0: the API declares a single http/bearer security scheme, there is no
+  authorization server, no /token endpoint, no consent screen and no scope negotiation. The scopes
+  are recorded here because they are real, documented and gate individual operations; the canonical
+  OAuthScopes pointer is used because it is the catalog's scope-reference type, not because an OAuth
+  flow exists.
+docs: https://scanverity.com/resolution-api/docs
+model: token-bound
+default: deny
+authorization_server: null
+scope_count: 4
+scopes:
+  - name: resolution:request
+    description: Authorizes creation of new resolution assessments. This is the only billable scope.
+    operations:
+      - createResolutionAssessment
+  - name: resolution:read
+    description: Authorizes reading and polling an existing account-scoped assessment. Never billable.
+    operations:
+      - getResolutionAssessment
+  - name: usage:read
+    description: >-
+      Authorizes only the live reconciled-usage routes. A sandbox token carrying this scope is still
+      refused; the docs state a live token is required.
+    operations:
+      - getResolutionUsageSummary
+      - listResolutionUsageEvents
+  - name: webhooks:manage
+    description: >-
+      Authorizes only the webhook endpoint registry and the append-only delivery-evidence
+      operations, including manual redelivery.
+    operations:
+      - createResolutionWebhookEndpoint
+      - listResolutionWebhookEndpoints
+      - deleteResolutionWebhookEndpoint
+      - listResolutionWebhookDeliveries
+      - redeliverResolutionWebhook
+enforcement:
+  insufficient_scope_status: 403
+  insufficient_scope_code: INSUFFICIENT_SCOPE
+  note: >-
+    The 403 body carries a detail string naming the missing scope, e.g. "This token lacks the
+    'resolution:request' scope."

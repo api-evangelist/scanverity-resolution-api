@@ -1,0 +1,647 @@
+openapi: 3.2.0
+info:
+  title: Scanverity Resolution Resolution usage API
+  version: 1.3.0-private-beta
+  summary: Feature-gated API for resolution-risk assessments, reconciled usage, deterministic sandbox fixtures and signed webhooks.
+  description: Contract for the implemented private-beta assessment, reconciled-usage, deterministic-sandbox and signed-webhook slice. This document does not assert that the feature flag is enabled in production. It does not provide outcome, trading, investment or position advice. Capabilities marked NOT_YET_AVAILABLE are roadmap vocabulary, not callable operations.
+  contact:
+    name: Scanverity Intelligence support
+    url: https://scanverity.com/contact
+    email: research@scanverity.com
+servers:
+- url: https://scanverity.com
+  description: Production origin. Access is private-beta and feature-gated; availability is not implied by this specification.
+security:
+- bearerToken: []
+tags:
+- name: Resolution usage
+  description: Read account-scoped monthly reconciled usage totals and their cursor-paginated evidence events.
+paths:
+  /v1/usage:
+    get:
+      operationId: getResolutionUsageSummary
+      tags:
+      - Resolution usage
+      summary: Read reconciled monthly usage totals
+      description: Requires a live Resolution API token with usage:read. Returns the authenticated account's reconciled totals for period, or for the current UTC month when period is omitted. The account is derived only from the bearer token; account selectors are rejected.
+      x-required-scope: usage:read
+      x-required-token-environment: live
+      x-availability: IMPLEMENTED_FEATURE_GATED
+      parameters:
+      - $ref: '#/components/parameters/UsagePeriodOptional'
+      responses:
+        '200':
+          description: Reconciled totals for one UTC calendar month.
+          headers:
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimit-Limit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimit-Remaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimit-Reset'
+            RateLimit-Scope:
+              $ref: '#/components/headers/RateLimit-Scope'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResolutionUsageSummary'
+              examples:
+                monthlyTotals:
+                  $ref: '#/components/examples/ResolutionUsageSummary'
+        '400':
+          $ref: '#/components/responses/ResolutionUsageBadRequest'
+        '401':
+          $ref: '#/components/responses/InvalidToken'
+        '403':
+          $ref: '#/components/responses/ResolutionUsageForbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '503':
+          $ref: '#/components/responses/ResolutionUsageUnavailable'
+  /v1/usage/events:
+    get:
+      operationId: listResolutionUsageEvents
+      tags:
+      - Resolution usage
+      summary: List reconciled usage evidence events
+      description: Requires a live Resolution API token with usage:read. Returns one cursor-paginated page of released usage events for the authenticated account and required UTC month. Cursors are opaque and bound to that account and period; clients must not construct or reuse them across scopes.
+      x-required-scope: usage:read
+      x-required-token-environment: live
+      x-availability: IMPLEMENTED_FEATURE_GATED
+      parameters:
+      - $ref: '#/components/parameters/UsagePeriodRequired'
+      - $ref: '#/components/parameters/UsageCursor'
+      - $ref: '#/components/parameters/UsageLimit'
+      responses:
+        '200':
+          description: A bounded page of reconciled usage events in release order.
+          headers:
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimit-Limit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimit-Remaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimit-Reset'
+            RateLimit-Scope:
+              $ref: '#/components/headers/RateLimit-Scope'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResolutionUsageEventsPage'
+              examples:
+                monthlyEvents:
+                  $ref: '#/components/examples/ResolutionUsageEventsPage'
+        '400':
+          $ref: '#/components/responses/ResolutionUsageBadRequest'
+        '401':
+          $ref: '#/components/responses/InvalidToken'
+        '403':
+          $ref: '#/components/responses/ResolutionUsageForbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '503':
+          $ref: '#/components/responses/ResolutionUsageUnavailable'
+components:
+  schemas:
+    ResolutionUsageSummary:
+      type: object
+      additionalProperties: false
+      required:
+      - object
+      - account_id
+      - billing_period
+      - totals
+      properties:
+        object:
+          const: resolution_usage
+        account_id:
+          type: string
+          minLength: 1
+          maxLength: 128
+          description: Authenticated account identity. It is never selected by a query parameter.
+        billing_period:
+          type: string
+          pattern: ^\d{4}-(?:0[1-9]|1[0-2])$
+        totals:
+          $ref: '#/components/schemas/ResolutionUsageTotals'
+    ResolutionUsageEvent:
+      type: object
+      additionalProperties: false
+      required:
+      - event_id
+      - assessment_id
+      - market_id
+      - released_at
+      - assessment_version
+      - billing_disposition
+      - original_quantity
+      - adjustment_quantity
+      - effective_quantity
+      properties:
+        event_id:
+          type: string
+          pattern: ^[0-9A-HJKMNP-TV-Z]{26}$
+        assessment_id:
+          $ref: '#/components/schemas/AssessmentId'
+        market_id:
+          type: string
+          pattern: ^\d{1,20}$
+        released_at:
+          type: string
+          format: date-time
+        assessment_version:
+          type: string
+          minLength: 1
+          maxLength: 160
+        billing_disposition:
+          type: string
+          enum:
+          - billable
+          - evaluation_credit
+          - measurement
+        original_quantity:
+          const: 1
+        adjustment_quantity:
+          type: integer
+          minimum: -1
+          maximum: 0
+        effective_quantity:
+          type: integer
+          enum:
+          - 0
+          - 1
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - error
+      properties:
+        error:
+          type: object
+          additionalProperties: false
+          required:
+          - code
+          - message
+          properties:
+            code:
+              type: string
+              enum:
+              - INVALID_REQUEST
+              - INVALID_MARKET
+              - UNSUPPORTED_MARKET
+              - INVALID_IDEMPOTENCY_KEY
+              - IDEMPOTENCY_CONFLICT
+              - WEBHOOK_NOT_CONFIGURED
+              - INSUFFICIENT_SCOPE
+              - INVALID_TOKEN
+              - RATE_LIMITED
+              - NOT_FOUND
+              - METHOD_NOT_ALLOWED
+              - PROVIDER_UNAVAILABLE
+              - INTERNAL_ERROR
+            message:
+              type: string
+            detail:
+              type: string
+              maxLength: 500
+            docs_url:
+              type: string
+              format: uri
+    ResolutionUsageProblemResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - error
+      properties:
+        error:
+          type: object
+          additionalProperties: false
+          required:
+          - code
+          - message
+          properties:
+            code:
+              type: string
+              enum:
+              - INVALID_USAGE_QUERY
+              - INVALID_USAGE_CURSOR
+              - USAGE_UNAVAILABLE
+              - USAGE_INTEGRITY_FAILED
+            message:
+              type: string
+    ResolutionUsageEventsPage:
+      type: object
+      additionalProperties: false
+      required:
+      - object
+      - account_id
+      - billing_period
+      - data
+      - has_more
+      - next_cursor
+      properties:
+        object:
+          const: list
+        account_id:
+          type: string
+          minLength: 1
+          maxLength: 128
+        billing_period:
+          type: string
+          pattern: ^\d{4}-(?:0[1-9]|1[0-2])$
+        data:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/ResolutionUsageEvent'
+        has_more:
+          type: boolean
+        next_cursor:
+          type:
+          - string
+          - 'null'
+          minLength: 1
+          maxLength: 500
+          pattern: ^[A-Za-z0-9_-]+$
+          description: Opaque continuation cursor when has_more is true; otherwise null.
+    ResolutionUsageTotals:
+      type: object
+      additionalProperties: false
+      required:
+      - released
+      - billable
+      - evaluation_credit
+      - measurement
+      - adjusted_units
+      properties:
+        released:
+          type: integer
+          minimum: 0
+          description: Number of released usage evidence events before adjustments.
+        billable:
+          type: integer
+          minimum: 0
+          description: Effective billable units after append-only adjustments.
+        evaluation_credit:
+          type: integer
+          minimum: 0
+          description: Effective non-billable evaluation-credit units after adjustments.
+        measurement:
+          type: integer
+          minimum: 0
+          description: Effective isolated cost-measurement units after adjustments.
+        adjusted_units:
+          type: integer
+          minimum: 0
+          description: Units removed by append-only adjustments in this reconciled period.
+    AssessmentId:
+      type: string
+      pattern: ^ra_[a-f0-9]{32}$
+      examples:
+      - ra_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  examples:
+    ResolutionUsageEventsPage:
+      value:
+        object: list
+        account_id: account-example
+        billing_period: 2026-08
+        data:
+        - event_id: 01KAAAAAAAAAAAAAAAAAAAAAAA
+          assessment_id: ra_33333333333333333333333333333333
+          market_id: '1105752'
+          released_at: '2026-08-03T16:00:08.000Z'
+          assessment_version: rr2-v1
+          billing_disposition: billable
+          original_quantity: 1
+          adjustment_quantity: 0
+          effective_quantity: 1
+        - event_id: 01KBBBBBBBBBBBBBBBBBBBBBBB
+          assessment_id: ra_44444444444444444444444444444444
+          market_id: '1105753'
+          released_at: '2026-08-03T16:05:08.000Z'
+          assessment_version: rr2-v1
+          billing_disposition: evaluation_credit
+          original_quantity: 1
+          adjustment_quantity: -1
+          effective_quantity: 0
+        has_more: false
+        next_cursor: null
+    ResolutionUsageSummary:
+      value:
+        object: resolution_usage
+        account_id: account-example
+        billing_period: 2026-08
+        totals:
+          released: 2
+          billable: 1
+          evaluation_credit: 0
+          measurement: 0
+          adjusted_units: 1
+  responses:
+    ResolutionUsageBadRequest:
+      description: The query is invalid, the required events period is absent, the cursor is invalid for this account and period, or a token was supplied in the URL.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: INVALID_TOKEN
+              message: Send the token in the Authorization header, never the URL.
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ResolutionUsageProblemResponse'
+          examples:
+            invalidQuery:
+              value:
+                error:
+                  code: INVALID_USAGE_QUERY
+                  message: period must use YYYY-MM.
+            invalidCursor:
+              value:
+                error:
+                  code: INVALID_USAGE_CURSOR
+                  message: The usage cursor is invalid for this account and month.
+    RateLimited:
+      description: The current shared per-token or per-account traffic bound was reached. Rate limiting is not purchased usage.
+      headers:
+        Retry-After:
+          $ref: '#/components/headers/Retry-After'
+        RateLimit-Limit:
+          $ref: '#/components/headers/RateLimit-Limit'
+        RateLimit-Remaining:
+          $ref: '#/components/headers/RateLimit-Remaining'
+        RateLimit-Reset:
+          $ref: '#/components/headers/RateLimit-Reset'
+        RateLimit-Scope:
+          $ref: '#/components/headers/RateLimit-Scope'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: RATE_LIMITED
+              message: Too many requests — slow down and retry.
+    ResolutionUsageForbidden:
+      description: The credential is valid but is not a live token carrying usage:read.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: INSUFFICIENT_SCOPE
+              message: A live token with usage:read is required.
+    ResolutionUsageUnavailable:
+      description: The reconciled usage view could not be read safely or failed its integrity/parity checks. No partial usage data is returned.
+      headers:
+        RateLimit-Limit:
+          $ref: '#/components/headers/RateLimit-Limit'
+        RateLimit-Remaining:
+          $ref: '#/components/headers/RateLimit-Remaining'
+        RateLimit-Reset:
+          $ref: '#/components/headers/RateLimit-Reset'
+        RateLimit-Scope:
+          $ref: '#/components/headers/RateLimit-Scope'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ResolutionUsageProblemResponse'
+          examples:
+            integrityFailure:
+              value:
+                error:
+                  code: USAGE_INTEGRITY_FAILED
+                  message: Resolution usage is temporarily unavailable.
+            unavailable:
+              value:
+                error:
+                  code: USAGE_UNAVAILABLE
+                  message: Resolution usage is temporarily unavailable.
+    InvalidToken:
+      description: Unknown, malformed, expired or revoked token. These cases are deliberately indistinguishable.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: INVALID_TOKEN
+              message: The bearer token is invalid, expired or revoked.
+  parameters:
+    UsagePeriodRequired:
+      name: period
+      in: query
+      required: true
+      description: Required UTC calendar month in YYYY-MM form.
+      schema:
+        type: string
+        pattern: ^\d{4}-(?:0[1-9]|1[0-2])$
+        examples:
+        - 2026-08
+    UsageLimit:
+      name: limit
+      in: query
+      required: false
+      description: Maximum number of usage events returned in one page.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 50
+    UsageCursor:
+      name: cursor
+      in: query
+      required: false
+      description: Opaque cursor returned by the preceding page for the same authenticated account and period.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 500
+        pattern: ^[A-Za-z0-9_-]+$
+    UsagePeriodOptional:
+      name: period
+      in: query
+      required: false
+      description: UTC calendar month in YYYY-MM form. Defaults to the current UTC month on the summary route.
+      schema:
+        type: string
+        pattern: ^\d{4}-(?:0[1-9]|1[0-2])$
+        examples:
+        - 2026-08
+  headers:
+    RateLimit-Scope:
+      description: The read or request bucket consumed by this authenticated operation.
+      x-availability: IMPLEMENTED_FEATURE_GATED
+      schema:
+        type: string
+        enum:
+        - read
+        - request
+    RateLimit-Limit:
+      description: Maximum requests in the token's current 60-second read or request bucket.
+      x-availability: IMPLEMENTED_FEATURE_GATED
+      schema:
+        type: integer
+        minimum: 0
+    Retry-After:
+      description: Whole seconds to wait before retrying. Implemented on 429 responses.
+      schema:
+        type: integer
+        minimum: 1
+    RateLimit-Reset:
+      description: Whole seconds until the current token and class window resets.
+      x-availability: IMPLEMENTED_FEATURE_GATED
+      schema:
+        type: integer
+        minimum: 0
+    RateLimit-Remaining:
+      description: Requests remaining in the current token and class bucket.
+      x-availability: IMPLEMENTED_FEATURE_GATED
+      schema:
+        type: integer
+        minimum: 0
+  securitySchemes:
+    bearerToken:
+      type: http
+      scheme: bearer
+      bearerFormat: svr_live_… or svr_sandbox_…
+      description: Reveal-once, account-scoped, environment-bound Resolution API token sent only in Authorization. Legacy svk_ Professional tokens are rejected. Query-string tokens are rejected. All four scope names are deny-by-default; usage:read authorizes only the live reconciled-usage routes, while webhooks:manage authorizes only the endpoint registry and delivery-log operations. Unknown, expired and revoked credentials intentionally share INVALID_TOKEN.
+x-scanverity-capability-status:
+  statusVocabulary:
+  - IMPLEMENTED
+  - IMPLEMENTED_FEATURE_GATED
+  - NOT_YET_AVAILABLE
+  operations:
+    POST /v1/resolution-assessments: IMPLEMENTED_FEATURE_GATED
+    GET /v1/resolution-assessments/{assessment_id}: IMPLEMENTED_FEATURE_GATED
+    GET /v1/resolution-assessments: NOT_YET_AVAILABLE
+    GET /v1/usage: IMPLEMENTED_FEATURE_GATED
+    GET /v1/usage/events: IMPLEMENTED_FEATURE_GATED
+    POST /v1/webhook-endpoints: IMPLEMENTED_FEATURE_GATED
+    GET /v1/webhook-endpoints: IMPLEMENTED_FEATURE_GATED
+    DELETE /v1/webhook-endpoints/{endpoint_id}: IMPLEMENTED_FEATURE_GATED
+    GET /v1/webhook-endpoints/{endpoint_id}/deliveries: IMPLEMENTED_FEATURE_GATED
+    POST /v1/webhook-endpoints/{endpoint_id}/redeliver/{delivery_id}: IMPLEMENTED_FEATURE_GATED
+  scopes:
+    resolution:read: IMPLEMENTED_FEATURE_GATED
+    resolution:request: IMPLEMENTED_FEATURE_GATED
+    usage:read: IMPLEMENTED_FEATURE_GATED
+    webhooks:manage: IMPLEMENTED_FEATURE_GATED
+  environmentBoundTokens: IMPLEMENTED_FEATURE_GATED
+  deterministicSandboxAssessments: IMPLEMENTED_FEATURE_GATED
+  webhookDelivery: IMPLEMENTED_FEATURE_GATED
+  reconciledUsageApi: IMPLEMENTED_FEATURE_GATED
+  usageAndInvoiceApi: NOT_YET_AVAILABLE
+  invoiceApi: NOT_YET_AVAILABLE
+  standardRateLimitHeaders: IMPLEMENTED_FEATURE_GATED
+  publicDocumentationRoute: IMPLEMENTED
+x-scanverity-documentation:
+  sourceIndex: docs/resolution-api/README.md
+  sourceContract: docs/resolution-api/openapi.json
+  sourceChangelog: docs/resolution-api/CHANGELOG.md
+  publicIndex: https://scanverity.com/resolution-api/docs
+  publicContract: https://scanverity.com/resolution-api/openapi.json
+  availability: IMPLEMENTED
+x-scanverity-fair-billing:
+  exactCopy: You are charged only when Scanverity releases a new assessment. Cache hits, failed requests and withheld assessments are not billed.
+  billablePredicate: status is released and billable is true and metering.disposition is billable
+  nonBillable:
+  - idempotent duplicate
+  - cache hit
+  - read
+  - poll
+  - 4xx response
+  - 5xx response
+  - timeout
+  - failed assessment
+  - withheld assessment
+  - webhook delivery, automatic retry or manual redelivery
+  - sandbox call
+  - response without a released assessment
+  pricingAvailability: PUBLISHED
+  ratecardAvailability: PUBLISHED
+  billingAvailability: PRIVATE_BETA_MANUAL_PROVISIONING
+  pricingVersion: rc-2026-08-04.launch.1
+  pricingUrl: /pricing
+x-scanverity-rate-limits:
+  windowSeconds: 60
+  scope: per token and separated by read or request class
+  live:
+    read: 120
+    request: 60
+  sandbox:
+    read: 30
+    request: 10
+  headers:
+  - RateLimit-Limit
+  - RateLimit-Remaining
+  - RateLimit-Reset
+  - RateLimit-Scope
+  limitedHeader: Retry-After
+  availability: IMPLEMENTED_FEATURE_GATED
+  note: A rate limit is a traffic-protection bound, not a purchased quota unit; purchased usage is tracked separately, and neither implies the other.
+x-scanverity-sandbox:
+  availability: IMPLEMENTED_FEATURE_GATED
+  version: resolution-sandbox-v1
+  fixedAssessedAt: '2026-08-03T00:00:00.000Z'
+  tokenEnvironment: sandbox
+  liveResolverOrCustomerDataRead: false
+  billable: false
+  markets:
+  - market: sv-sandbox-released-calibrated
+    result: released_calibrated
+  - market: sv-sandbox-released-modelled-only
+    result: released_modelled_only
+  - market: sv-sandbox-withheld-no-rules
+    result: WITHHELD_NO_RULES_TEXT
+  - market: sv-sandbox-withheld-no-finite-estimate
+    result: WITHHELD_NO_FINITE_ESTIMATE
+  - market: sv-sandbox-withheld-source-unverified
+    result: WITHHELD_SOURCE_UNVERIFIED
+  - market: sv-sandbox-failed
+    result: terminal_PROVIDER_UNAVAILABLE
+  - market: sv-sandbox-rate-limit
+    result: released_calibrated
+  - market: sv-sandbox-ambiguous
+    result: INVALID_MARKET
+  - market: sv-sandbox-unsupported
+    result: UNSUPPORTED_MARKET
+x-scanverity-webhooks:
+  availability: IMPLEMENTED_FEATURE_GATED
+  requiredScope: webhooks:manage
+  accountAndEnvironmentScoped: true
+  events:
+  - assessment.released
+  - assessment.withheld
+  - assessment.failed
+  envelopeSchemaVersion: v1
+  signatureHeader: Scanverity-Signature
+  deliveryIdHeader: Scanverity-Delivery-Id
+  signatureFormat: t=<unix>, v1=<hex HMAC-SHA256(secret,"<t>.<raw-body>")>
+  signatureToleranceSeconds: 300
+  stableDeliveryIdAcrossAutomaticAttempts: true
+  attemptOffsetsSeconds:
+  - 60
+  - 300
+  - 1800
+  - 7200
+  - 28800
+  maximumAttempts: 5
+  appendOnlyDeliveryLogDays: 90
+  continuousFailureAutoDisableDays: 3
+  manualRedeliveryAudited: true
+  deliveryAndRedeliveryBillable: false
+  pollingRemainsAvailable: true
+  targetPolicy: Credential-free HTTPS on port 443; public DNS only; validated at registration and again before delivery; validated address pinned; redirects are not followed.
+  revealOnceSecretPrefix: svrwhsec_
+x-scanverity-retention:
+  idempotencyBindingDays: 30
+  idempotencyBindingAvailability: IMPLEMENTED_FEATURE_GATED
+  financialUsageEvidenceMinimumYearsAfterFinancialYear: 7
+  financialUsageEvidenceControl: IMPLEMENTED_INTERNAL_CONTROL
+  assessmentResourceGuarantee: NOT_YET_AVAILABLE
+  webhookDeliveryLogDays: 90
+  webhookDeliveryLogControl: IMPLEMENTED_FEATURE_GATED
+  postTerminationExportGuarantee: NOT_YET_AVAILABLE

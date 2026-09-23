@@ -1,0 +1,79 @@
+generated: '2026-09-04'
+method: searched
+source: https://scanverity.com/resolution-api/docs
+derived_from: openapi/scanverity-resolution-api-openapi.json
+name: Scanverity Resolution API rate limits
+description: >-
+  Per-token, per-minute limits split into two buckets -- reads and assessment requests -- with
+  different ceilings in the live and sandbox environments. The full RateLimit-* header family is
+  declared on every operation in the contract, so the runtime signal is available to an agent on
+  success responses, not only on 429.
+docs: https://scanverity.com/resolution-api/docs
+limit_count: 4
+window: 60 seconds
+scope: per-token (with a shared per-account bound also referenced)
+buckets:
+  - name: read
+    description: Reads and polls of assessments, usage and webhook records.
+  - name: request
+    description: Assessment creation.
+limits:
+  - environment: live
+    bucket: read
+    scope: per-token
+    window: 60s
+    limit: 120
+    unit: requests
+  - environment: live
+    bucket: request
+    scope: per-token
+    window: 60s
+    limit: 60
+    unit: requests
+  - environment: sandbox
+    bucket: read
+    scope: per-token
+    window: 60s
+    limit: 30
+    unit: requests
+  - environment: sandbox
+    bucket: request
+    scope: per-token
+    window: 60s
+    limit: 10
+    unit: requests
+response_headers:
+  - name: RateLimit-Limit
+    type: integer
+    description: Maximum requests in the token's current 60-second read or request bucket.
+    availability: IMPLEMENTED_FEATURE_GATED
+  - name: RateLimit-Remaining
+    type: integer
+    description: Requests remaining in the current token and class bucket.
+    availability: IMPLEMENTED_FEATURE_GATED
+  - name: RateLimit-Reset
+    type: integer
+    description: Whole seconds until the current token and class window resets.
+    availability: IMPLEMENTED_FEATURE_GATED
+  - name: RateLimit-Scope
+    type: string
+    enum: [read, request]
+    description: Which bucket this authenticated operation consumed.
+    availability: IMPLEMENTED_FEATURE_GATED
+  - name: Retry-After
+    type: integer
+    description: Whole seconds to wait before retrying. Implemented on 429 responses.
+    on_status: 429
+exhaustion:
+  status: 429
+  code: RATE_LIMITED
+  message: Too many requests - slow down and retry.
+  headers_returned: [Retry-After, RateLimit-Limit, RateLimit-Remaining, RateLimit-Reset, RateLimit-Scope]
+headers_on_success: true
+notes:
+  - >-
+    The contract states plainly that rate limiting is not purchased usage: hitting 429 does not
+    consume plan quota, and a 429 is never billable.
+  - >-
+    Limits could not be observed live: every route requires an entitled private-beta token, so these
+    values are read from the provider's published documentation rather than from response headers.

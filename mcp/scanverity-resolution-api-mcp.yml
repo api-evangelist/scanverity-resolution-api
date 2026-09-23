@@ -1,0 +1,99 @@
+generated: '2026-09-04'
+method: derived
+source: openapi/scanverity-resolution-api-openapi.json
+name: Scanverity Resolution API MCP candidate
+status: candidate
+description: >-
+  Scanverity publishes NO MCP server. This is a derived candidate tool surface mapped one-to-one
+  from the published OpenAPI operations, recorded so the shape of a future server is legible. It is
+  not an agent surface and must not be read as one -- no endpoint exists, and none is invented here.
+deployment:
+  mode: none
+  endpoint: null
+  install: null
+  package: null
+  auth: api-key
+  verified: probed
+  note: >-
+    Probed https://scanverity.com/mcp (404), /api/mcp (404) and /sse (404) on 2026-09-04. The
+    provider's own llms.txt enumerates its machine-readable discovery surface explicitly as sitemap,
+    RSS feed and robots.txt only -- no MCP and no agent skills. auth is recorded as api-key because
+    that is what any future server would have to carry (bearer svr_ token), not because a server
+    exists.
+probes:
+  - url: https://scanverity.com/mcp
+    status: 404
+  - url: https://scanverity.com/api/mcp
+    status: 404
+  - url: https://scanverity.com/sse
+    status: 404
+  - url: https://scanverity.com/.well-known/ai-plugin.json
+    status: 404
+candidate_tools:
+  - name: create_resolution_assessment
+    rest: createResolutionAssessment
+    method: POST
+    path: /v1/resolution-assessments
+    scope: resolution:request
+    consequence: billable write; requires an Idempotency-Key
+    description: Request a resolution-risk assessment of one Polymarket market.
+  - name: get_resolution_assessment
+    rest: getResolutionAssessment
+    method: GET
+    path: /v1/resolution-assessments/{assessment_id}
+    scope: resolution:read
+    consequence: read-only, never billable
+    description: Read or poll one assessment until it reaches a terminal state.
+  - name: get_resolution_usage_summary
+    rest: getResolutionUsageSummary
+    method: GET
+    path: /v1/usage
+    scope: usage:read
+    consequence: read-only
+    description: Read reconciled monthly usage totals for the authenticated account.
+  - name: list_resolution_usage_events
+    rest: listResolutionUsageEvents
+    method: GET
+    path: /v1/usage/events
+    scope: usage:read
+    consequence: read-only, cursor-paginated
+    description: List reconciled per-assessment usage evidence events for a UTC month.
+  - name: create_resolution_webhook_endpoint
+    rest: createResolutionWebhookEndpoint
+    method: POST
+    path: /v1/webhook-endpoints
+    scope: webhooks:manage
+    consequence: write; reveals a signing secret once
+    description: Register a signed webhook endpoint.
+  - name: list_resolution_webhook_endpoints
+    rest: listResolutionWebhookEndpoints
+    method: GET
+    path: /v1/webhook-endpoints
+    scope: webhooks:manage
+    consequence: read-only
+    description: List registered endpoints for the token's account and environment.
+  - name: delete_resolution_webhook_endpoint
+    rest: deleteResolutionWebhookEndpoint
+    method: DELETE
+    path: /v1/webhook-endpoints/{endpoint_id}
+    scope: webhooks:manage
+    consequence: destructive write; erases the destination and signing secret
+    description: Remove a webhook endpoint. Delivery evidence is preserved.
+  - name: list_resolution_webhook_deliveries
+    rest: listResolutionWebhookDeliveries
+    method: GET
+    path: /v1/webhook-endpoints/{endpoint_id}/deliveries
+    scope: webhooks:manage
+    consequence: read-only
+    description: List append-only delivery evidence for an endpoint.
+  - name: redeliver_resolution_webhook
+    rest: redeliverResolutionWebhook
+    method: POST
+    path: /v1/webhook-endpoints/{endpoint_id}/redeliver/{delivery_id}
+    scope: webhooks:manage
+    consequence: write, non-billable; creates a new audited delivery group
+    description: Request an audited manual redelivery of a terminal delivery group.
+tool_count: 9
+input_schemas: >-
+  Each candidate tool would inherit its parameters and requestBody verbatim from the named OpenAPI
+  operation. No schema is authored here.

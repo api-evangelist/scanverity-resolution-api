@@ -1,0 +1,24 @@
+{
+  "provider": "scanverity-resolution-api",
+  "sources": [
+    "_original/scanverity-resolution-api-openapi.json"
+  ],
+  "outputs": [
+    "scanverity-resolution-api-resolution-assessments-api-openapi.yml",
+    "scanverity-resolution-api-resolution-usage-api-openapi.yml",
+    "scanverity-resolution-api-webhook-endpoints-api-openapi.yml"
+  ],
+  "archived": [],
+  "errors": [],
+  "warnings": [],
+  "notes": [
+    "sourced from openapi/_original/ (1 archived document(s)); previously refined output at the top level was skipped rather than re-split",
+    "scanverity-resolution-api-openapi.json: upgraded openapi 3.1.0 -> OpenAPI 3.2.0",
+    "apis.yml register: already-registered"
+  ],
+  "skipped": [
+    "scanverity-resolution-api-resolution-assessments-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "scanverity-resolution-api-resolution-usage-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "scanverity-resolution-api-webhook-endpoints-api-openapi.yml: previously refined output, superseded by openapi/_original/"
+  ]
+}

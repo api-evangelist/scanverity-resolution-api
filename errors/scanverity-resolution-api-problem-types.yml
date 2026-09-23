@@ -1,0 +1,137 @@
+generated: '2026-09-04'
+method: searched
+source: https://scanverity.com/resolution-api/docs
+derived_from: openapi/scanverity-resolution-api-openapi.json
+name: Scanverity Resolution API error catalog
+description: >-
+  Every error code the contract enumerates, across four distinct registries: the core request
+  errors, the reconciled-usage problem codes, the webhook registration errors, and the two
+  in-resource outcome registries (withheld reasons and terminal failure codes) that are carried
+  inside a 200 body rather than an HTTP error status.
+docs: https://scanverity.com/resolution-api/docs
+format: custom-envelope
+rfc9457:
+  conforms: partial
+  note: >-
+    The usage routes serve media type application/problem+json but carry Scanverity's own
+    { error: { code, message } } envelope, not RFC 9457's type/title/status/detail members.
+envelope:
+  shape: '{ "error": { "code", "message", "detail"?, "docs_url"? } }'
+  fields:
+    code: machine-readable enum value
+    message: human-readable summary
+    detail: optional, max 500 characters
+    docs_url: optional URI into the documentation
+
+core_errors:
+  - code: INVALID_REQUEST
+    status: 400
+    title: Malformed request
+    remediation: Correct the request body or query. Also returned when a token is placed in the URL instead of the Authorization header.
+  - code: INVALID_MARKET
+    status: 400
+    title: Market identifier could not be parsed
+    remediation: Supply a stable Polymarket market id, a supported slug, or a supported canonical URL.
+  - code: UNSUPPORTED_MARKET
+    status: 422
+    title: Market is outside supported coverage
+    remediation: Check the published coverage page before requesting; not every market is assessable.
+  - code: INVALID_IDEMPOTENCY_KEY
+    status: 400
+    title: Idempotency-Key failed validation
+    remediation: Use 1-255 printable ASCII characters with no leading or trailing whitespace.
+  - code: IDEMPOTENCY_CONFLICT
+    status: 409
+    title: Key reused with a different payload
+    remediation: Either replay the exact canonical payload, or use a new key. The binding lasts 30 days.
+  - code: WEBHOOK_NOT_CONFIGURED
+    status: 422
+    title: webhook=true with no active endpoint
+    remediation: Register an active endpoint in the same account AND token environment first. Inline webhook URLs are never accepted.
+  - code: INSUFFICIENT_SCOPE
+    status: 403
+    title: Token lacks the required scope
+    remediation: Reissue a token carrying the operation's scope. The detail field names the missing scope.
+  - code: INVALID_TOKEN
+    status: 401
+    title: Credential rejected
+    remediation: Obtain a valid token. Unknown, malformed, expired and revoked credentials deliberately share this one response.
+  - code: RATE_LIMITED
+    status: 429
+    title: Traffic bound reached
+    remediation: Honour Retry-After and the RateLimit-* headers. Rate limiting is not purchased usage.
+  - code: NOT_FOUND
+    status: 404
+    title: Unknown or cross-account identifier
+    remediation: Unknown ids and ids belonging to another account share this response by design; do not treat it as proof of non-existence.
+  - code: METHOD_NOT_ALLOWED
+    status: 405
+    title: Method not supported on this path
+    remediation: Use the method the contract declares for the path.
+  - code: PROVIDER_UNAVAILABLE
+    status: 503
+    title: Upstream market resolver unavailable
+    remediation: Retry later. No assessment is released and the request is not billable.
+  - code: INTERNAL_ERROR
+    status: 500
+    title: Request could not be completed safely
+    remediation: Retry. No assessment is released and the request is not billable.
+
+usage_problem_codes:
+  media_type: application/problem+json
+  codes:
+    - code: INVALID_USAGE_QUERY
+      status: 400
+      remediation: period must use YYYY-MM form.
+    - code: INVALID_USAGE_CURSOR
+      status: 400
+      remediation: The cursor is invalid for this account and month; restart the page sequence.
+    - code: USAGE_UNAVAILABLE
+      status: 503
+      remediation: Retry later. No partial usage data is ever returned.
+    - code: USAGE_INTEGRITY_FAILED
+      status: 503
+      remediation: The reconciled view failed its integrity/parity checks; retry later. No partial data is returned.
+
+webhook_registration_errors:
+  - code: UNSAFE_WEBHOOK_TARGET
+    status: 422
+    remediation: Destination must be credential-free public HTTPS on port 443 and pass DNS/SSRF validation.
+  - code: WEBHOOK_ENDPOINT_LIMIT
+    status: 409
+    remediation: The account already retains ten endpoint records in this token environment; delete one first.
+
+in_resource_outcomes:
+  note: >-
+    These are NOT HTTP errors. They are carried inside a 200/202 assessment body and are the
+    single most important thing for an agent to branch on -- a withheld assessment is a successful,
+    non-billable call that deliberately declines to state a risk figure.
+  withheld:
+    extensible: true
+    extension_mechanism: x-extensible-enum
+    fields: [code, could_not_verify, reason, verified_facts, retry.policy, evidence_reference]
+    codes:
+      - code: WITHHELD_NO_RULES_TEXT
+        meaning: Resolution rule text could not be retrieved or verified, so no assessment is stated.
+      - code: WITHHELD_NO_FINITE_ESTIMATE
+        meaning: The model could not produce a finite calibrated estimate.
+      - code: WITHHELD_SOURCE_UNVERIFIED
+        meaning: The resolution source could not be verified to the required evidence standard.
+  terminal_failure:
+    extensible: true
+    extension_mechanism: x-extensible-enum
+    fields: [code, detail, retryable]
+    codes:
+      - code: ASSESSMENT_FAILED
+      - code: PROVIDER_UNAVAILABLE
+      - code: INTERNAL_ERROR
+
+billing_note: >-
+  Every 4xx and 5xx response, and every withheld or failed assessment, is explicitly non-billable.
+counts:
+  core: 13
+  usage_problem: 4
+  webhook_registration: 2
+  withheld: 3
+  terminal_failure: 3
+  total: 25

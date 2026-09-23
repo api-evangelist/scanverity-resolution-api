@@ -1,0 +1,64 @@
+generated: '2026-09-04'
+method: searched
+source: https://scanverity.com/resolution-api/docs
+name: Scanverity Resolution API deterministic sandbox
+description: >-
+  A closed, fully deterministic fixture catalog reached by token prefix rather than a request flag.
+  Every documented terminal outcome of the API -- released, withheld in three distinct ways, failed,
+  and two request-rejection paths -- has a named fixture, so an integration can be exercised end to
+  end without an entitled live account and without spending anything.
+docs: https://scanverity.com/resolution-api/docs
+catalog_id: resolution-sandbox-v1
+selection_mechanism: token prefix
+test_token_prefix: svr_sandbox_
+live_token_prefix: svr_live_
+billable: false
+deterministic: true
+fixed_assessed_at: '2026-08-03T00:00:00.000Z'
+guarantees:
+  - Never calls the live resolver.
+  - Never reads provider or customer data.
+  - Every sandbox assessment is non-billable and reproducible.
+  - Sandbox requests do not use the request-level PROVIDER_UNAVAILABLE fallback; the sv-sandbox-failed fixture produces a readable terminal failed resource instead.
+limits:
+  read_per_minute: 30
+  request_per_minute: 10
+fixtures:
+  - market: sv-sandbox-released-calibrated
+    outcome: released
+    exercises: A full released assessment with a calibrated resolution-risk figure.
+  - market: sv-sandbox-released-modelled-only
+    outcome: released
+    exercises: A released assessment whose risk is modelled only, without calibration.
+  - market: sv-sandbox-withheld-no-rules
+    outcome: withheld
+    code: WITHHELD_NO_RULES_TEXT
+  - market: sv-sandbox-withheld-no-finite-estimate
+    outcome: withheld
+    code: WITHHELD_NO_FINITE_ESTIMATE
+  - market: sv-sandbox-withheld-source-unverified
+    outcome: withheld
+    code: WITHHELD_SOURCE_UNVERIFIED
+  - market: sv-sandbox-failed
+    outcome: failed
+    exercises: A readable terminal failed resource.
+  - market: sv-sandbox-rate-limit
+    outcome: released
+    exercises: Rate-limit behaviour against a released result.
+  - market: sv-sandbox-ambiguous
+    outcome: error
+    code: INVALID_MARKET
+  - market: sv-sandbox-unsupported
+    outcome: error
+    code: UNSUPPORTED_MARKET
+fixture_count: 9
+webhooks_in_sandbox:
+  supported: true
+  note: >-
+    Webhook endpoints are registered per environment. A sandbox token can only see and deliver to
+    sandbox-environment endpoints; cross-environment identifiers return NOT_FOUND.
+notes:
+  - >-
+    Fixture market identifiers are published values from the provider's own documentation, quoted
+    verbatim. No test credential, token or secret is published by the provider and none is recorded
+    here.

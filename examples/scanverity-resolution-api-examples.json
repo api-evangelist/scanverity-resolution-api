@@ -1,0 +1,478 @@
+{
+  "$comment": "Verbatim extraction of components.examples from the provider's published OpenAPI 3.1 contract (https://scanverity.com/resolution-api/openapi.json). Values are unmodified.",
+  "source": "https://scanverity.com/resolution-api/openapi.json",
+  "generated": "2026-09-04",
+  "method": "searched",
+  "contract_version": "1.3.0-private-beta",
+  "example_count": 15,
+  "examples": {
+    "ResolutionUsageSummary": {
+      "value": {
+        "object": "resolution_usage",
+        "account_id": "account-example",
+        "billing_period": "2026-08",
+        "totals": {
+          "released": 2,
+          "billable": 1,
+          "evaluation_credit": 0,
+          "measurement": 0,
+          "adjusted_units": 1
+        }
+      }
+    },
+    "ResolutionUsageEventsPage": {
+      "value": {
+        "object": "list",
+        "account_id": "account-example",
+        "billing_period": "2026-08",
+        "data": [
+          {
+            "event_id": "01KAAAAAAAAAAAAAAAAAAAAAAA",
+            "assessment_id": "ra_33333333333333333333333333333333",
+            "market_id": "1105752",
+            "released_at": "2026-08-03T16:00:08.000Z",
+            "assessment_version": "rr2-v1",
+            "billing_disposition": "billable",
+            "original_quantity": 1,
+            "adjustment_quantity": 0,
+            "effective_quantity": 1
+          },
+          {
+            "event_id": "01KBBBBBBBBBBBBBBBBBBBBBBB",
+            "assessment_id": "ra_44444444444444444444444444444444",
+            "market_id": "1105753",
+            "released_at": "2026-08-03T16:05:08.000Z",
+            "assessment_version": "rr2-v1",
+            "billing_disposition": "evaluation_credit",
+            "original_quantity": 1,
+            "adjustment_quantity": -1,
+            "effective_quantity": 0
+          }
+        ],
+        "has_more": false,
+        "next_cursor": null
+      }
+    },
+    "WebhookEndpointCreated": {
+      "value": {
+        "endpoint_id": "whe_0123456789abcdef0123456789abcdef",
+        "url": "https://hooks.example.com/scanverity",
+        "description": "production resolution receiver",
+        "events": [
+          "assessment.released",
+          "assessment.withheld",
+          "assessment.failed"
+        ],
+        "environment": "live",
+        "status": "enabled",
+        "created_at": "2026-08-03T19:00:00.000Z",
+        "last_success_at": null,
+        "disabled_at": null,
+        "disabled_reason": null,
+        "signing_secret": "svrwhsec_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      }
+    },
+    "WebhookEndpointList": {
+      "value": [
+        {
+          "endpoint_id": "whe_0123456789abcdef0123456789abcdef",
+          "url": "https://hooks.example.com/scanverity",
+          "description": "production resolution receiver",
+          "events": [
+            "assessment.released",
+            "assessment.withheld",
+            "assessment.failed"
+          ],
+          "environment": "live",
+          "status": "enabled",
+          "created_at": "2026-08-03T19:00:00.000Z",
+          "last_success_at": null,
+          "disabled_at": null,
+          "disabled_reason": null
+        }
+      ]
+    },
+    "WebhookDeliveryList": {
+      "value": [
+        {
+          "delivery_id": "wd_0123456789abcdef0123456789abcdef",
+          "endpoint_id": "whe_0123456789abcdef0123456789abcdef",
+          "assessment_id": "ra_0123456789abcdef0123456789abcdef",
+          "event": "assessment.released",
+          "state": "delivered",
+          "created_at": "2026-08-03T19:00:00.000Z",
+          "completed_at": "2026-08-03T19:01:00.000Z",
+          "next_attempt_at": null,
+          "attempt_count": 1,
+          "redelivery_of": null,
+          "attempts": [
+            {
+              "attempt_id": "wha_0123456789abcdef0123456789abcdef",
+              "attempt_number": 1,
+              "started_at": "2026-08-03T19:01:00.000Z",
+              "completed_at": "2026-08-03T19:01:00.000Z",
+              "signature_timestamp": 1785783660,
+              "outcome": "success",
+              "http_status": 204,
+              "error_code": null
+            }
+          ],
+          "billable": false
+        }
+      ]
+    },
+    "WebhookRedelivery": {
+      "value": {
+        "delivery_id": "wd_fedcba9876543210fedcba9876543210",
+        "endpoint_id": "whe_0123456789abcdef0123456789abcdef",
+        "assessment_id": "ra_0123456789abcdef0123456789abcdef",
+        "event": "assessment.released",
+        "state": "pending",
+        "created_at": "2026-08-03T20:00:00.000Z",
+        "completed_at": null,
+        "next_attempt_at": "2026-08-03T20:01:00.000Z",
+        "attempt_count": 0,
+        "redelivery_of": "wd_0123456789abcdef0123456789abcdef",
+        "attempts": [],
+        "billable": false
+      }
+    },
+    "SandboxReleasedAssessment": {
+      "value": {
+        "assessed_at": "2026-08-03T00:00:00.000Z",
+        "market": {
+          "market_id": "9900001",
+          "condition_id": null,
+          "slug": "sv-sandbox-released-calibrated",
+          "title": "Sandbox: calibrated resolution-risk assessment"
+        },
+        "rules_snapshot": {
+          "sha256": "328310be4020d2a1e2614b0991a35fd04541b41629048e44e27f3f493cdaa2d8",
+          "captured_at": "2026-08-03T00:00:00.000Z"
+        },
+        "evidence_snapshot": {
+          "sha256": "73c9df16313991ba333a2717ea387f8722588076222dcb14eaf436c23cd6ba60",
+          "book_as_of": "2026-08-03T00:00:00.000Z",
+          "universe_as_of": "2026-08-03T00:00:00.000Z"
+        },
+        "resolution_risk": {
+          "classification": "HIGH_RESOLUTION_RISK",
+          "risk_basis": "CALIBRATED",
+          "modelled": {
+            "dispute_probability": 0.31,
+            "ambiguity_score": 0.62,
+            "source_reliability_score": 0.4,
+            "timezone_risk": 0.1,
+            "cancellation_risk": 0.05
+          },
+          "calibrated_estimate": {
+            "p_cal": 0.27,
+            "bucket_n": 119,
+            "ci_low": 0.2,
+            "ci_high": 0.35,
+            "model_version": "resolution-sandbox-v1@calibrated"
+          },
+          "confidence": "MEDIUM"
+        },
+        "risk_factors": {
+          "principal_reason_codes": [
+            "CONFLICTING_SOURCES",
+            "TIMEZONE_AMBIGUITY"
+          ],
+          "exact_rule_fragments": [
+            "according to Source A or Source B"
+          ],
+          "alternative_interpretations": [
+            "The two named sources can publish different outcomes."
+          ],
+          "title_rules_mismatch": false,
+          "upcoming_critical_dates": []
+        },
+        "verified_facts": [
+          {
+            "kind": "SANDBOX_FIXTURE",
+            "statement": "This is a fixed deterministic sandbox fixture; it is not a live-market claim.",
+            "as_of": "2026-08-03T00:00:00.000Z"
+          }
+        ],
+        "provenance": {
+          "record_schema": "watch-record-v2",
+          "model_version": "resolution-sandbox-v1@calibrated",
+          "evidence_freshness": {
+            "rules_as_of": "2026-08-03T00:00:00.000Z",
+            "book_as_of": "2026-08-03T00:00:00.000Z",
+            "universe_as_of": "2026-08-03T00:00:00.000Z"
+          },
+          "limitations": [
+            "Deterministic sandbox data only; no live provider or customer data was read."
+          ]
+        },
+        "metering": {
+          "disposition": "sandbox"
+        },
+        "assessment_id": "ra_eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "market_id": "9900001",
+        "status": "released",
+        "created_at": "2026-08-03T19:00:00.000Z",
+        "billable": false
+      }
+    },
+    "AcceptedAssessment": {
+      "value": {
+        "assessment_id": "ra_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "market_id": "1105752",
+        "status": "accepted",
+        "created_at": "2026-08-03T16:00:00.000Z",
+        "billable": false,
+        "customer_reference": "case-2026-08-03",
+        "status_url": "https://scanverity.com/v1/resolution-assessments/ra_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "polling": {
+          "recommended_interval_seconds": 3,
+          "typical_completion_seconds": 10
+        }
+      }
+    },
+    "ProcessingAssessment": {
+      "value": {
+        "assessment_id": "ra_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "market_id": "1105752",
+        "status": "processing",
+        "created_at": "2026-08-03T16:00:00.000Z",
+        "billable": false,
+        "customer_reference": "case-2026-08-03"
+      }
+    },
+    "ReleasedBillableAssessment": {
+      "value": {
+        "assessment_id": "ra_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "market_id": "1105752",
+        "status": "released",
+        "created_at": "2026-08-03T16:00:00.000Z",
+        "billable": true,
+        "customer_reference": "case-2026-08-03",
+        "assessed_at": "2026-08-03T16:00:08.000Z",
+        "market": {
+          "market_id": "1105752",
+          "title": "Will the example market resolve?",
+          "condition_id": null,
+          "slug": "example-market"
+        },
+        "resolution_risk": {
+          "classification": "ELEVATED_RESOLUTION_RISK",
+          "risk_basis": "CALIBRATED",
+          "confidence": "MEDIUM",
+          "modelled": {
+            "dispute_probability": 0.31,
+            "ambiguity_score": 0.62
+          },
+          "calibrated_estimate": {
+            "p_cal": 0.27,
+            "bucket_n": 30,
+            "model_version": "rr2-v1"
+          }
+        },
+        "risk_factors": {
+          "principal_reason_codes": [
+            "AMBIGUOUS_DEADLINE"
+          ],
+          "exact_rule_fragments": [
+            "The official source must confirm the result."
+          ],
+          "alternative_interpretations": [
+            "Confirmation may occur after the named deadline."
+          ],
+          "title_rules_mismatch": false
+        },
+        "provenance": {
+          "record_schema": "watch-record-v2",
+          "model_version": "rr2-v1",
+          "limitations": [
+            "The source carries no explicit publication schedule."
+          ],
+          "evidence_freshness": {
+            "rules_as_of": "2026-08-03T15:59:30.000Z",
+            "book_as_of": null
+          }
+        },
+        "metering": {
+          "disposition": "billable",
+          "usage_event_id": "usage-correlation-example"
+        }
+      }
+    },
+    "ReleasedEvaluationCreditAssessment": {
+      "value": {
+        "assessment_id": "ra_11111111111111111111111111111111",
+        "market_id": "1105752",
+        "status": "released",
+        "created_at": "2026-08-03T16:02:00.000Z",
+        "billable": false,
+        "assessed_at": "2026-08-03T16:02:08.000Z",
+        "market": {
+          "market_id": "1105752",
+          "title": "Will the example market resolve?",
+          "condition_id": null,
+          "slug": "example-market"
+        },
+        "rules_snapshot": {
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "captured_at": "2026-08-03T16:01:30.000Z"
+        },
+        "evidence_snapshot": {
+          "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "book_as_of": "2026-08-03T16:01:45.000Z",
+          "universe_as_of": "2026-08-03T16:01:45.000Z"
+        },
+        "resolution_risk": {
+          "classification": "ELEVATED_RESOLUTION_RISK",
+          "risk_basis": "CALIBRATED",
+          "confidence": "MEDIUM",
+          "modelled": {
+            "dispute_probability": 0.31,
+            "ambiguity_score": 0.62
+          }
+        },
+        "risk_factors": {
+          "principal_reason_codes": [
+            "AMBIGUOUS_DEADLINE"
+          ],
+          "exact_rule_fragments": [
+            "The official source must confirm the result."
+          ],
+          "alternative_interpretations": [
+            "Confirmation may occur after the named deadline."
+          ],
+          "title_rules_mismatch": false
+        },
+        "provenance": {
+          "record_schema": "watch-record-v2",
+          "model_version": "rr2-v1",
+          "limitations": []
+        },
+        "metering": {
+          "disposition": "evaluation_credit",
+          "usage_event_id": "usage-evaluation-credit-example"
+        }
+      }
+    },
+    "ReleasedMeasurementAssessment": {
+      "value": {
+        "assessment_id": "ra_22222222222222222222222222222222",
+        "market_id": "1105752",
+        "status": "released",
+        "created_at": "2026-08-03T16:03:00.000Z",
+        "billable": false,
+        "assessed_at": "2026-08-03T16:03:08.000Z",
+        "market": {
+          "market_id": "1105752",
+          "title": "Will the example market resolve?",
+          "condition_id": null,
+          "slug": "example-market"
+        },
+        "rules_snapshot": {
+          "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "captured_at": "2026-08-03T16:02:30.000Z"
+        },
+        "evidence_snapshot": {
+          "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "book_as_of": "2026-08-03T16:02:45.000Z",
+          "universe_as_of": "2026-08-03T16:02:45.000Z"
+        },
+        "resolution_risk": {
+          "classification": "ELEVATED_RESOLUTION_RISK",
+          "risk_basis": "CALIBRATED",
+          "confidence": "MEDIUM",
+          "modelled": {
+            "dispute_probability": 0.31,
+            "ambiguity_score": 0.62
+          }
+        },
+        "risk_factors": {
+          "principal_reason_codes": [
+            "AMBIGUOUS_DEADLINE"
+          ],
+          "exact_rule_fragments": [
+            "The official source must confirm the result."
+          ],
+          "alternative_interpretations": [
+            "Confirmation may occur after the named deadline."
+          ],
+          "title_rules_mismatch": false
+        },
+        "provenance": {
+          "record_schema": "watch-record-v2",
+          "model_version": "rr2-v1",
+          "limitations": []
+        },
+        "metering": {
+          "disposition": "measurement",
+          "usage_event_id": "usage-measurement-example"
+        }
+      }
+    },
+    "ReleasedCacheHitAssessment": {
+      "value": {
+        "assessment_id": "ra_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "market_id": "1105752",
+        "status": "released",
+        "created_at": "2026-08-03T16:05:00.000Z",
+        "billable": false,
+        "assessed_at": "2026-08-03T16:05:01.000Z",
+        "market": {
+          "market_id": "1105752",
+          "title": "Will the example market resolve?",
+          "condition_id": null,
+          "slug": "example-market"
+        },
+        "resolution_risk": {
+          "classification": "ELEVATED_RESOLUTION_RISK",
+          "risk_basis": "CALIBRATED"
+        },
+        "risk_factors": {
+          "principal_reason_codes": [],
+          "exact_rule_fragments": [],
+          "alternative_interpretations": []
+        },
+        "provenance": {
+          "record_schema": "watch-record-v2",
+          "limitations": []
+        },
+        "metering": {
+          "disposition": "cache_hit"
+        }
+      }
+    },
+    "WithheldAssessment": {
+      "value": {
+        "assessment_id": "ra_cccccccccccccccccccccccccccccccc",
+        "market_id": "1105752",
+        "status": "withheld",
+        "created_at": "2026-08-03T16:10:00.000Z",
+        "billable": false,
+        "withheld": {
+          "code": "WITHHELD_NO_RULES_TEXT",
+          "could_not_verify": "The market's decisive rules text could not be verified.",
+          "reason": "Publishing a resolution-risk assessment without verified rules would be unreliable.",
+          "verified_facts": [],
+          "retry": {
+            "policy": "retried when the blocking input changes and at the next scheduled assessment"
+          }
+        }
+      }
+    },
+    "FailedAssessment": {
+      "value": {
+        "assessment_id": "ra_dddddddddddddddddddddddddddddddd",
+        "market_id": "1105752",
+        "status": "failed",
+        "created_at": "2026-08-03T16:15:00.000Z",
+        "billable": false,
+        "error": {
+          "code": "PROVIDER_UNAVAILABLE",
+          "detail": "The assessment provider was temporarily unavailable.",
+          "retryable": true
+        }
+      }
+    }
+  }
+}

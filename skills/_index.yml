@@ -1,0 +1,46 @@
+generated: '2026-09-04'
+method: generated
+source: openapi/scanverity-resolution-api-openapi.json
+name: Scanverity Resolution API agent skills
+description: >-
+  Packaged operating instructions for the Scanverity Resolution API, one per marquee flow. Every
+  operationId referenced was verified against the provider's published OpenAPI 3.1 contract; no
+  operation, parameter, error code or fixture value is invented. The provider publishes no skills of
+  its own and no AGENTS.md, so these are generated.
+provider_published_skills: false
+provider_probed:
+  - url: https://scanverity.com/llms.txt
+    status: 200
+    note: >-
+      The provider's own llms.txt enumerates its machine-readable surface as sitemap, RSS and
+      robots.txt only. It references no agent skills and no MCP server.
+skill_count: 4
+skills:
+  - name: scanverity-assess-market
+    file: scanverity-resolution-api-assess-market.md
+    summary: Request and poll a resolution-risk assessment, branching correctly on released, withheld and failed.
+    operations: [createResolutionAssessment, getResolutionAssessment]
+    scopes: [resolution:request, resolution:read]
+  - name: scanverity-manage-webhooks
+    file: scanverity-resolution-api-webhooks.md
+    summary: Register signed endpoints, verify HMAC signatures, audit append-only delivery evidence and redeliver.
+    operations:
+      - createResolutionWebhookEndpoint
+      - listResolutionWebhookEndpoints
+      - deleteResolutionWebhookEndpoint
+      - listResolutionWebhookDeliveries
+      - redeliverResolutionWebhook
+    scopes: [webhooks:manage]
+  - name: scanverity-reconcile-usage
+    file: scanverity-resolution-api-usage-reconciliation.md
+    summary: Read reconciled monthly totals and page the per-assessment billing evidence ledger.
+    operations: [getResolutionUsageSummary, listResolutionUsageEvents]
+    scopes: [usage:read]
+  - name: scanverity-sandbox-fixtures
+    file: scanverity-resolution-api-sandbox.md
+    summary: Exercise every terminal outcome free against the deterministic fixture catalog.
+    operations: [createResolutionAssessment, getResolutionAssessment]
+    scopes: [resolution:request, resolution:read]
+operation_coverage:
+  total_operations: 9
+  covered: 9

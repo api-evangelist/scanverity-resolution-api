@@ -1,0 +1,57 @@
+generated: '2026-09-04'
+method: searched
+source: https://scanverity.com/resolution-api/docs
+name: Scanverity Resolution API client packages
+description: >-
+  No first-party or third-party client library exists for this API in any public registry. The
+  provider deliberately ships dependency-free copy-paste examples instead of an SDK, which is a
+  coherent choice for a nine-operation API but leaves nothing to install. Recorded as an honest
+  zero; no SDKs pointer is emitted.
+package_count: 0
+official_sdk_count: 0
+packages: []
+registries_searched:
+  - registry: npm
+    query: https://registry.npmjs.org/-/v1/search?text=scanverity
+    results: 0
+    checked: '2026-09-04'
+  - registry: pypi
+    query: https://pypi.org/pypi/scanverity/json
+    results: 0
+    status: 404
+    checked: '2026-09-04'
+  - registry: rubygems
+    query: https://rubygems.org/api/v1/gems/scanverity.json
+    results: 0
+    checked: '2026-09-04'
+  - registry: crates.io
+    query: https://crates.io/api/v1/crates?q=scanverity
+    results: 0
+    checked: '2026-09-04'
+  - registry: github
+    query: https://api.github.com/search/repositories?q=scanverity
+    results: 0
+    note: Two unrelated repositories matched on a substring; neither belongs to Scanverity or KotIQ OU.
+    checked: '2026-09-04'
+  - registry: github-org
+    query: https://github.com/scanverity
+    status: 404
+    note: No GitHub organization exists. No GitHubOrganization pointer is emitted.
+    checked: '2026-09-04'
+documented_alternatives:
+  note: >-
+    The reference documentation ships runnable request examples in three forms, none of them a
+    published package.
+  examples:
+    - language: shell
+      form: cURL
+      version: null
+      published: null
+    - language: typescript
+      form: inline example, Node 22+, no dependencies
+      version: null
+      published: null
+    - language: python
+      form: inline example, standard library only
+      version: null
+      published: null

@@ -1,0 +1,105 @@
+generated: '2026-09-04'
+method: derived
+source: openapi/scanverity-resolution-api-openapi.json
+searched: https://scanverity.com/resolution-api/docs
+name: Scanverity Resolution API conformance
+description: >-
+  Cross-cutting standards this contract does and does not assert. Assessed against the spec itself
+  and the provider's published documentation, never against marketing prose.
+docs: https://scanverity.com/resolution-api/docs
+entries:
+  - id: openapi-3.1
+    conforms: true
+    evidence: 'openapi: 3.1.0 declared at the document root of https://scanverity.com/resolution-api/openapi.json'
+  - id: apis-json
+    conforms: true
+    evidence: >-
+      First-party APIs.json 0.23 index served at https://scanverity.com/apis.json (aid
+      scanverity.com:api-index), naming the OpenAPI, docs, terms, privacy and contact.
+  - id: rfc9727-api-catalog
+    conforms: true
+    evidence: >-
+      https://scanverity.com/.well-known/api-catalog returns HTTP 200 with media type
+      application/linkset+json and profile "https://www.rfc-editor.org/info/rfc9727", carrying
+      service-desc, service-doc and service-meta link relations.
+  - id: rfc8594-deprecation-sunset
+    conforms: true
+    evidence: >-
+      components.headers declares both Deprecation and Sunset, with the documented six-month minimum
+      notice before retiring a live version or operation.
+  - id: rfc9111-idempotency-key
+    conforms: true
+    evidence: >-
+      components.parameters.IdempotencyKey declares a REQUIRED Idempotency-Key header on
+      createResolutionAssessment, with a 30-day account+token binding, an Idempotent-Replayed
+      response header and a 409 IDEMPOTENCY_CONFLICT on payload divergence.
+    note: >-
+      Follows the widely-deployed Idempotency-Key convention (IETF httpapi draft), not a ratified
+      RFC.
+  - id: ratelimit-headers
+    conforms: true
+    evidence: >-
+      RateLimit-Limit, RateLimit-Remaining, RateLimit-Reset and a non-standard RateLimit-Scope are
+      declared on every operation response, plus Retry-After on 429.
+    note: >-
+      Header names follow the IETF ratelimit-headers draft naming. RateLimit-Scope is a
+      Scanverity extension, and the draft's structured-field RateLimit form is not used.
+  - id: rfc9457-problem-details
+    conforms: false
+    evidence: >-
+      The reconciled-usage responses use media type application/problem+json but carry a bespoke
+      { error: { code, message } } envelope. None of RFC 9457's type, title, status, detail or
+      instance members is present.
+    note: problem+json by media type only, not by member set.
+  - id: rfc6750-bearer-token
+    conforms: true
+    evidence: 'components.securitySchemes.bearerToken declares type http, scheme bearer, sent only in Authorization.'
+  - id: oauth2
+    conforms: false
+    evidence: >-
+      No oauth2 or openIdConnect security scheme is declared, and
+      /.well-known/oauth-authorization-server and /.well-known/openid-configuration both return 404.
+      Scopes exist but are bound to opaque tokens at issue, not negotiated.
+  - id: cursor-pagination
+    conforms: true
+    evidence: >-
+      listResolutionUsageEvents implements opaque account- and period-bound cursors with limit
+      (default 50, max 100), has_more and next_cursor.
+  - id: llms-txt
+    conforms: true
+    evidence: 'https://scanverity.com/llms.txt returns HTTP 200 text/plain in llms.txt structure.'
+  - id: webhook-hmac-signing
+    conforms: true
+    evidence: >-
+      Scanverity-Signature carries t=<unix>, v1=<hex HMAC-SHA256> over "<t>.<raw-body>" with a
+      300-second tolerance.
+
+domain_standard:
+  assessed: true
+  standard: null
+  conforms: false
+  rationale: >-
+    Prediction-market resolution intelligence has no published domain interchange standard. The
+    market's own identifiers are proprietary to the venue -- the contract carries Polymarket
+    condition_id as a 0x-prefixed 32-byte hex value and a numeric market_id -- and Polymarket
+    publishes no schema this contract could declare conformance to. There is no FIX, ISO 20022,
+    FDX or OpenRTB analogue for this surface. REWARD-ONLY check: recorded as no applicable standard
+    rather than inventing one.
+  probed_regimes: [fintech]
+  note: >-
+    The provider is a research/intelligence vendor, not a regulated financial institution. Its own
+    documentation states the output is read-only research with no order execution, no custody and no
+    trading advice, which places it outside PSD2/MiCA-style API mandates.
+
+certifications:
+  published: false
+  probed:
+    - url: https://trust.scanverity.com/
+      result: DNS does not resolve
+    - url: https://scanverity.com/en/trust
+      status: 404
+    - url: https://scanverity.com/security
+      status: 404
+  note: >-
+    No SOC 2, ISO 27001, PCI, HIPAA or FedRAMP claim was found anywhere on the public surface. No
+    Compliance or TrustCenter pointer is emitted.

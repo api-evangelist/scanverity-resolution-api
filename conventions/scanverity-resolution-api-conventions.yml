@@ -1,0 +1,200 @@
+generated: '2026-09-04'
+method: searched
+source: https://scanverity.com/resolution-api/docs
+derived_from: openapi/scanverity-resolution-api-openapi.json
+name: Scanverity Resolution API cross-cutting conventions
+description: >-
+  Runtime semantics an agent needs before it calls this API: how it authenticates, how it replays
+  safely, how it pages, how errors are shaped, how rate limits are signalled, and whether any write
+  can be taken back.
+docs: https://scanverity.com/resolution-api/docs
+
+auth:
+  style: http bearer
+  header: Authorization
+  token_prefixes: [svr_live_, svr_sandbox_]
+  detail: authentication/scanverity-resolution-api-authentication.yml
+
+idempotency:
+  coverage: full
+  supported: true
+  header: Idempotency-Key
+  required: true
+  key_format: 1-255 printable ASCII characters, no leading or trailing whitespace
+  binding_scope: account + token
+  retention: 30 days
+  replay_response: HTTP 202 returning the existing resource, never a second resource or assessment run
+  replay_header: 'Idempotent-Replayed: true'
+  conflict_status: 409
+  conflict_code: IDEMPOTENCY_CONFLICT
+  conflict_condition: same account, token and unexpired key used with a DIFFERENT canonical payload
+  scope:
+    - createResolutionAssessment
+  coverage_rationale: >-
+    coverage is `full` because the API has exactly one non-trivial state-creating write --
+    createResolutionAssessment -- and Idempotency-Key is REQUIRED (not optional) on it. The
+    remaining mutating operations are the webhook registry: createResolutionWebhookEndpoint is
+    guarded by a uniqueness 409 rather than a key, deleteResolutionWebhookEndpoint is naturally
+    idempotent (repeat DELETE yields the same NOT_FOUND), and redeliverResolutionWebhook is
+    explicitly non-billable and creates a new audited delivery group by design. No billable write
+    on this surface can be double-fired.
+  billing_interaction: An idempotent duplicate is never billable.
+
+pagination:
+  style: opaque cursor
+  applies_to:
+    - listResolutionUsageEvents
+  params:
+    limit: { in: query, default: 50, max: 100, min: 1 }
+    cursor: { in: query, opaque: true, max_length: 500, pattern: '^[A-Za-z0-9_-]+$' }
+  response_fields:
+    data: array of usage events in release order
+    has_more: boolean
+    next_cursor: opaque continuation cursor when has_more is true, otherwise null
+  cursor_binding: >-
+    Cursors are bound to the authenticated account AND the requested period. They must not be
+    constructed by a client or reused across scopes; an invalid cursor returns INVALID_USAGE_CURSOR.
+  other_lists:
+    - operation: listResolutionWebhookEndpoints
+      style: unpaginated, newest-first
+    - operation: listResolutionWebhookDeliveries
+      style: bounded to the newest 50 delivery groups, newest-first
+
+async_model:
+  style: create-and-poll with optional webhook fan-out
+  create: POST /v1/resolution-assessments returns 202 with status accepted
+  states: [accepted, processing, released, withheld, failed]
+  terminal_states: [released, withheld, failed]
+  polling_guidance_field: polling_guidance
+  recommended_interval_seconds: 3
+  typical_completion_seconds: 10
+  note: >-
+    typical_completion_seconds is published as indicative behaviour, explicitly NOT a completion
+    guarantee or service-level commitment. Reads and polls are never billable.
+
+field_conventions:
+  identifiers:
+    assessment_id: '^ra_[a-f0-9]{32}$'
+    webhook_endpoint_id: '^whe_[a-f0-9]{32}$'
+    webhook_delivery_id: '^wd_[a-f0-9]{32}$'
+    usage_event_id: 26-character Crockford ULID
+  customer_correlation:
+    field: customer_reference
+    max_length: 200
+    behaviour: echoed verbatim, never interpreted
+  timestamps: RFC 3339 UTC date-time throughout
+  additional_properties: 'components schemas are almost all additionalProperties: false (strict)'
+
+versioning:
+  style: major version in path
+  current: /v1
+  contract_version: 1.3.0-private-beta
+  breaking_change_policy: breaking changes ship under a new major path
+  detail: lifecycle/scanverity-resolution-api-lifecycle.yml
+
+error_envelope:
+  shape: '{ "error": { "code", "message", "detail"?, "docs_url"? } }'
+  media_types:
+    - application/json
+    - application/problem+json
+  rfc9457:
+    partial: true
+    note: >-
+      The reconciled-usage routes serve application/problem+json, but the body is Scanverity's own
+      { error: { code, message } } envelope rather than the RFC 9457 type/title/status/detail
+      members. It is problem+json by media type, not by member set.
+  detail: errors/scanverity-resolution-api-problem-types.yml
+
+rate_limit_signalling:
+  headers: [RateLimit-Limit, RateLimit-Remaining, RateLimit-Reset, RateLimit-Scope]
+  retry_header: Retry-After
+  exhaustion_status: 429
+  exhaustion_code: RATE_LIMITED
+  buckets: [read, request]
+  detail: rate-limits/scanverity-resolution-api-rate-limits.yml
+
+request_limits:
+  assessment_body_max: 8 KiB (413 beyond)
+  webhook_registration_body_max: 16 KiB (413 beyond)
+
+reversibility:
+  grade: verified
+  applicable: true
+  summary: >-
+    The assessment surface is append-only and has no reversal operation, but it also has no
+    irreversible consequence to reverse: an assessment is a read-only research artifact, and the
+    only economic effect -- billing -- is itself reversible through a published adjustment mechanism
+    with a stated window. The webhook registry has a true reversal operation with an explicit
+    evidence-retention window.
+  write_surfaces:
+    - operation: createResolutionAssessment
+      consequence: creates an assessment resource and, when released and billable, one billable unit
+      reversal_operation: null
+      reversal_mechanism: >-
+        No cancel/void operation exists. Reversal happens in the reconciled usage ledger instead:
+        a usage event carries adjustment_quantity (-1 or 0) against original_quantity (always 1),
+        producing effective_quantity 0 or 1. A reversed assessment is therefore visibly credited
+        back in GET /v1/usage/events rather than deleted.
+      window: >-
+        Reconciliation is scoped to the UTC calendar month the assessment was released in; usage is
+        read and adjusted per billing_period (YYYY-MM), and unused monthly minimum credit expires at
+        the end of the billing period.
+      window_source: https://scanverity.com/resolution-api/docs
+      never_billable_cases:
+        - idempotent duplicate
+        - cache hit
+        - read or poll
+        - any 4xx response
+        - any 5xx response
+        - timeout
+        - failed assessment
+        - withheld assessment
+        - webhook delivery, automatic retry or manual redelivery
+        - any sandbox call
+      note: >-
+        The published never-billable list is the primary protection here: an agent that retries,
+        polls, or errors incurs no charge, so most of what would normally need undoing never
+        happens.
+    - operation: createResolutionWebhookEndpoint
+      consequence: registers a signed delivery destination and reveals a signing secret once
+      reversal_operation: deleteResolutionWebhookEndpoint
+      reversal_mechanism: >-
+        DELETE erases the destination and signing secret and cancels pending work. Append-only
+        delivery evidence is deliberately preserved.
+      window: >-
+        The endpoint record itself is removable at any time. The evidence it leaves behind is
+        retained for 90 days and cannot be deleted.
+      window_source: https://scanverity.com/resolution-api/docs
+    - operation: redeliverResolutionWebhook
+      consequence: schedules one additional non-billable delivery group
+      reversal_operation: null
+      reversal_mechanism: >-
+        Not reversible and does not need to be: redelivery creates a NEW delivery group linked by
+        redelivery_of and never rewrites the original group. It is explicitly non-billable.
+      window: null
+  irreversible_actions:
+    - Signing secrets are reveal-once; a lost secret cannot be re-read, only replaced by registering a new endpoint.
+    - Append-only webhook delivery evidence cannot be edited or removed, by design.
+
+dry_run_mode:
+  supported: true
+  mechanism: >-
+    A dedicated sandbox environment reached by token prefix rather than a per-request flag. An
+    svr_sandbox_ token resolves only against the closed deterministic fixture catalog, never calls
+    the live resolver, never reads provider or customer data, and is never billable.
+  detail: sandbox/scanverity-resolution-api-sandbox.yml
+
+tracing:
+  request_id_header: null
+  note: >-
+    No request-correlation header is documented. Correlation is done application-side through the
+    customer_reference field on assessments and the stable Scanverity-Delivery-Id on webhooks.
+
+cross_references:
+  errors: errors/scanverity-resolution-api-problem-types.yml
+  lifecycle: lifecycle/scanverity-resolution-api-lifecycle.yml
+  authentication: authentication/scanverity-resolution-api-authentication.yml
+  scopes: scopes/scanverity-resolution-api-scopes.yml
+  rate_limits: rate-limits/scanverity-resolution-api-rate-limits.yml
+  sandbox: sandbox/scanverity-resolution-api-sandbox.yml
+  webhooks: asyncapi/scanverity-resolution-api-webhooks.yml

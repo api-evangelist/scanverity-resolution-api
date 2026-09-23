@@ -1,0 +1,67 @@
+generated: '2026-09-04'
+method: probed
+source: https://scanverity.com/.well-known/
+name: Scanverity Resolution API well-known discovery probe
+description: >-
+  Probe of the RFC-registered /.well-known/ paths on every host this record knows: the registrable
+  domain scanverity.com and its www alias. Both hosts serve an identical RFC 9727 api-catalog
+  linkset; every other probed path returns a genuine HTTP 404 (the body is the site's SPA shell,
+  but the status code is a real 404, not a soft-200). There is no OpenID/OAuth metadata because the
+  API authenticates with opaque reveal-once bearer tokens rather than OAuth.
+hosts:
+  - host: scanverity.com
+    documents:
+      - path: /.well-known/api-catalog
+        status: 200
+        file: scanverity-resolution-api-api-catalog.json
+        media_type: application/linkset+json
+        profile: https://www.rfc-editor.org/info/rfc9727
+        note: >-
+          Real RFC 9727 linkset. Anchors the docs page and points at service-desc (the OpenAPI),
+          service-doc (the HTML reference) and three service-meta documents (commercial addendum,
+          privacy policy, contact).
+      - path: /.well-known/security.txt
+        status: 404
+      - path: /.well-known/openid-configuration
+        status: 404
+      - path: /.well-known/oauth-authorization-server
+        status: 404
+      - path: /.well-known/oauth-protected-resource
+        status: 404
+      - path: /.well-known/ai-plugin.json
+        status: 404
+      - path: /.well-known/agent-card.json
+        status: 404
+      - path: /.well-known/agent.json
+        status: 404
+      - path: /.well-known/aauth-resource.json
+        status: 404
+  - host: www.scanverity.com
+    documents:
+      - path: /.well-known/api-catalog
+        status: 200
+        file: scanverity-resolution-api-api-catalog.json
+        media_type: application/linkset+json
+        note: Byte-identical to the apex response; saved once.
+      - path: /.well-known/security.txt
+        status: 404
+      - path: /.well-known/openid-configuration
+        status: 404
+      - path: /.well-known/oauth-authorization-server
+        status: 404
+      - path: /.well-known/oauth-protected-resource
+        status: 404
+      - path: /.well-known/ai-plugin.json
+        status: 404
+      - path: /.well-known/agent-card.json
+        status: 404
+      - path: /.well-known/agent.json
+        status: 404
+      - path: /.well-known/aauth-resource.json
+        status: 404
+summary:
+  hosts_probed: 2
+  documents_served: 1
+  api_catalog_present: true
+  security_txt_present: false
+  agent_card_present: false

@@ -1,0 +1,1304 @@
+openapi: 3.2.0
+info:
+  title: Scanverity Resolution Resolution assessments API
+  version: 1.3.0-private-beta
+  summary: Feature-gated API for resolution-risk assessments, reconciled usage, deterministic sandbox fixtures and signed webhooks.
+  description: Contract for the implemented private-beta assessment, reconciled-usage, deterministic-sandbox and signed-webhook slice. This document does not assert that the feature flag is enabled in production. It does not provide outcome, trading, investment or position advice. Capabilities marked NOT_YET_AVAILABLE are roadmap vocabulary, not callable operations.
+  contact:
+    name: Scanverity Intelligence support
+    url: https://scanverity.com/contact
+    email: research@scanverity.com
+servers:
+- url: https://scanverity.com
+  description: Production origin. Access is private-beta and feature-gated; availability is not implied by this specification.
+security:
+- bearerToken: []
+tags:
+- name: Resolution assessments
+  description: Create and poll account-scoped assessment resources.
+paths:
+  /v1/resolution-assessments:
+    post:
+      operationId: createResolutionAssessment
+      tags:
+      - Resolution assessments
+      summary: Request an assessment of one market
+      description: Requires resolution:request. A valid request creates an accepted resource and schedules assessment work. Replaying the same live idempotency key and canonical payload returns the existing resource with HTTP 202. An svr_sandbox_ token uses only the closed deterministic sandbox catalog and every sandbox result is non-billable. webhook=true requires at least one active pre-registered endpoint in the same account and token environment; inline webhook URLs are never accepted.
+      x-required-scope: resolution:request
+      x-availability: IMPLEMENTED_FEATURE_GATED
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAssessmentRequest'
+            examples:
+              marketId:
+                summary: Request by stable market identifier
+                value:
+                  market: '1105752'
+                  customer_reference: case-2026-08-03
+              deterministicSandbox:
+                summary: Non-billable fixed sandbox fixture
+                value:
+                  market: sv-sandbox-released-calibrated
+                  customer_reference: sandbox-contract-test
+              withSignedWebhook:
+                summary: Deliver the terminal resource to matching registered endpoints
+                value:
+                  market: '1105752'
+                  customer_reference: case-with-webhook
+                  webhook: true
+      responses:
+        '202':
+          description: Newly accepted or idempotently replayed. A replay returns the resource's current state but never creates a second resource or assessment run.
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimit-Limit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimit-Remaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimit-Reset'
+            RateLimit-Scope:
+              $ref: '#/components/headers/RateLimit-Scope'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assessment'
+              examples:
+                accepted:
+                  $ref: '#/components/examples/AcceptedAssessment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/InvalidToken'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '409':
+          description: The same account, token and unexpired idempotency key were used with a different canonical payload.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: IDEMPOTENCY_CONFLICT
+                  message: This Idempotency-Key was already used with a different payload.
+        '413':
+          description: The JSON request body exceeds 8 KiB.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: INVALID_REQUEST
+                  message: The request body is not valid for this endpoint.
+                  detail: The request body exceeds 8 KiB.
+        '422':
+          description: The market is unsupported, or webhook delivery was requested without an active endpoint in the same account and environment.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                unsupportedMarket:
+                  value:
+                    error:
+                      code: UNSUPPORTED_MARKET
+                      message: The market is outside Scanverity's tracked assessment universe.
+                webhookNotConfigured:
+                  value:
+                    error:
+                      code: WEBHOOK_NOT_CONFIGURED
+                      message: Webhook delivery requires a pre-registered webhook endpoint.
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ProviderUnavailable'
+  /v1/resolution-assessments/{assessment_id}:
+    get:
+      operationId: getResolutionAssessment
+      tags:
+      - Resolution assessments
+      summary: Read or poll one assessment
+      description: Requires resolution:read. The assessment must belong to the token's account. Reading and polling are never billable.
+      x-required-scope: resolution:read
+      x-availability: IMPLEMENTED_FEATURE_GATED
+      parameters:
+      - $ref: '#/components/parameters/AssessmentId'
+      responses:
+        '200':
+          description: The assessment in its current state.
+          headers:
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimit-Limit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimit-Remaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimit-Reset'
+            RateLimit-Scope:
+              $ref: '#/components/headers/RateLimit-Scope'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assessment'
+              examples:
+                accepted:
+                  $ref: '#/components/examples/AcceptedAssessment'
+                processing:
+                  $ref: '#/components/examples/ProcessingAssessment'
+                releasedBillable:
+                  $ref: '#/components/examples/ReleasedBillableAssessment'
+                releasedEvaluationCredit:
+                  $ref: '#/components/examples/ReleasedEvaluationCreditAssessment'
+                releasedMeasurement:
+                  $ref: '#/components/examples/ReleasedMeasurementAssessment'
+                releasedCacheHit:
+                  $ref: '#/components/examples/ReleasedCacheHitAssessment'
+                sandboxReleased:
+                  $ref: '#/components/examples/SandboxReleasedAssessment'
+                withheld:
+                  $ref: '#/components/examples/WithheldAssessment'
+                failed:
+                  $ref: '#/components/examples/FailedAssessment'
+        '401':
+          $ref: '#/components/responses/InvalidToken'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          description: The identifier is unknown or belongs to another account; both cases have the same response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: NOT_FOUND
+                  message: The requested assessment was not found.
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+components:
+  schemas:
+    Provenance:
+      type: object
+      additionalProperties: false
+      required:
+      - record_schema
+      - limitations
+      properties:
+        record_schema:
+          type: string
+        model_version:
+          type: string
+        limitations:
+          type: array
+          maxItems: 20
+          items:
+            type: string
+        evidence_freshness:
+          $ref: '#/components/schemas/EvidenceFreshness'
+    AssessmentWithheld:
+      allOf:
+      - $ref: '#/components/schemas/AssessmentCommon'
+      - type: object
+        required:
+        - withheld
+        properties:
+          status:
+            const: withheld
+          billable:
+            const: false
+          withheld:
+            $ref: '#/components/schemas/WithheldDetail'
+          receipt:
+            description: Present only when a public receipt was successfully published for a live withheld assessment. Omitted for sandbox assessments and whenever no receipt was published.
+            allOf:
+            - $ref: '#/components/schemas/ReceiptReference'
+    VerifiedFact:
+      type: object
+      additionalProperties: false
+      required:
+      - kind
+      - statement
+      - as_of
+      properties:
+        kind:
+          type: string
+        statement:
+          type: string
+        as_of:
+          type: string
+          format: date-time
+    UnitInterval:
+      type: number
+      minimum: 0
+      maximum: 1
+    AssessmentFailed:
+      allOf:
+      - $ref: '#/components/schemas/AssessmentCommon'
+      - type: object
+        required:
+        - error
+        properties:
+          status:
+            const: failed
+          billable:
+            const: false
+          error:
+            $ref: '#/components/schemas/TerminalError'
+    ReceiptReference:
+      type: object
+      additionalProperties: false
+      required:
+      - receipt_id
+      - url
+      properties:
+        receipt_id:
+          type: string
+        url:
+          type: string
+          format: uri
+    PollingGuidance:
+      type: object
+      additionalProperties: false
+      required:
+      - recommended_interval_seconds
+      - typical_completion_seconds
+      properties:
+        recommended_interval_seconds:
+          type: integer
+          minimum: 1
+          examples:
+          - 3
+        typical_completion_seconds:
+          type: integer
+          minimum: 1
+          description: Indicative behavior, not a completion guarantee or service-level commitment.
+          examples:
+          - 10
+    MeteringBillable:
+      type: object
+      additionalProperties: false
+      required:
+      - disposition
+      - usage_event_id
+      properties:
+        disposition:
+          const: billable
+        usage_event_id:
+          type: string
+          minLength: 1
+    Market:
+      type: object
+      additionalProperties: false
+      required:
+      - market_id
+      - title
+      - condition_id
+      - slug
+      properties:
+        market_id:
+          type: string
+        title:
+          type: string
+        condition_id:
+          type:
+          - string
+          - 'null'
+          pattern: ^0x[a-f0-9]{64}$
+        slug:
+          type:
+          - string
+          - 'null'
+        canonical_url:
+          type: string
+          format: uri
+    Metering:
+      oneOf:
+      - $ref: '#/components/schemas/MeteringBillable'
+      - $ref: '#/components/schemas/MeteringEvaluationCredit'
+      - $ref: '#/components/schemas/MeteringMeasurement'
+      - $ref: '#/components/schemas/MeteringCacheHit'
+      - $ref: '#/components/schemas/MeteringSandbox'
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - error
+      properties:
+        error:
+          type: object
+          additionalProperties: false
+          required:
+          - code
+          - message
+          properties:
+            code:
+              type: string
+              enum:
+              - INVALID_REQUEST
+              - INVALID_MARKET
+              - UNSUPPORTED_MARKET
+              - INVALID_IDEMPOTENCY_KEY
+              - IDEMPOTENCY_CONFLICT
+              - WEBHOOK_NOT_CONFIGURED
+              - INSUFFICIENT_SCOPE
+              - INVALID_TOKEN
+              - RATE_LIMITED
+              - NOT_FOUND
+              - METHOD_NOT_ALLOWED
+              - PROVIDER_UNAVAILABLE
+              - INTERNAL_ERROR
+            message:
+              type: string
+            detail:
+              type: string
+              maxLength: 500
+            docs_url:
+              type: string
+              format: uri
+    TerminalError:
+      type: object
+      additionalProperties: false
+      required:
+      - code
+      properties:
+        code:
+          type: string
+          x-extensible-enum:
+          - ASSESSMENT_FAILED
+          - PROVIDER_UNAVAILABLE
+          - INTERNAL_ERROR
+        detail:
+          type: string
+        retryable:
+          type: boolean
+    MeteringSandbox:
+      type: object
+      additionalProperties: false
+      required:
+      - disposition
+      properties:
+        disposition:
+          const: sandbox
+    MeteringEvaluationCredit:
+      type: object
+      additionalProperties: false
+      required:
+      - disposition
+      - usage_event_id
+      properties:
+        disposition:
+          const: evaluation_credit
+        usage_event_id:
+          type: string
+          minLength: 1
+    Assessment:
+      oneOf:
+      - $ref: '#/components/schemas/AssessmentAccepted'
+      - $ref: '#/components/schemas/AssessmentProcessing'
+      - $ref: '#/components/schemas/AssessmentReleased'
+      - $ref: '#/components/schemas/AssessmentWithheld'
+      - $ref: '#/components/schemas/AssessmentFailed'
+      discriminator:
+        propertyName: status
+    MeteringCacheHit:
+      type: object
+      additionalProperties: false
+      required:
+      - disposition
+      properties:
+        disposition:
+          const: cache_hit
+    ResolutionRisk:
+      type: object
+      additionalProperties: false
+      required:
+      - classification
+      properties:
+        classification:
+          type: string
+          description: Open classification vocabulary; clients must preserve unknown future values.
+        risk_basis:
+          type: string
+        confidence:
+          type: string
+        modelled:
+          $ref: '#/components/schemas/ModelledRisk'
+        calibrated_estimate:
+          oneOf:
+          - $ref: '#/components/schemas/Calibration'
+          - type: 'null'
+          description: A measured null remains null. If the upstream record did not contain this key, it is omitted.
+    ModelledRisk:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        dispute_probability:
+          $ref: '#/components/schemas/UnitInterval'
+        ambiguity_score:
+          $ref: '#/components/schemas/UnitInterval'
+        source_reliability_score:
+          $ref: '#/components/schemas/UnitInterval'
+        timezone_risk:
+          $ref: '#/components/schemas/UnitInterval'
+        cancellation_risk:
+          $ref: '#/components/schemas/UnitInterval'
+    Calibration:
+      type: object
+      additionalProperties: true
+      properties:
+        p_cal:
+          type: number
+        ci_low:
+          type: number
+        ci_high:
+          type: number
+        bucket_n:
+          type: number
+        reliability:
+          type: number
+        base_rate:
+          type: number
+        model_version:
+          type: string
+    RulesSnapshot:
+      type: object
+      additionalProperties: false
+      required:
+      - sha256
+      - captured_at
+      properties:
+        sha256:
+          type: string
+          pattern: ^[a-f0-9]{64}$
+        captured_at:
+          type: string
+          format: date-time
+    EvidenceFreshness:
+      type: object
+      additionalProperties: false
+      properties:
+        rules_as_of:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        book_as_of:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        universe_as_of:
+          type:
+          - string
+          - 'null'
+          format: date-time
+    AssessmentProcessing:
+      allOf:
+      - $ref: '#/components/schemas/AssessmentCommon'
+      - type: object
+        properties:
+          status:
+            const: processing
+          billable:
+            const: false
+    AssessmentCommon:
+      type: object
+      required:
+      - assessment_id
+      - market_id
+      - status
+      - created_at
+      - billable
+      properties:
+        assessment_id:
+          $ref: '#/components/schemas/AssessmentId'
+        market_id:
+          type: string
+          minLength: 1
+        status:
+          type: string
+          enum:
+          - accepted
+          - processing
+          - released
+          - withheld
+          - failed
+        created_at:
+          type: string
+          format: date-time
+        billable:
+          type: boolean
+        customer_reference:
+          type: string
+          maxLength: 200
+    CriticalDate:
+      type: object
+      additionalProperties: false
+      properties:
+        date:
+          type: string
+          format: date-time
+        kind:
+          type: string
+        note:
+          type: string
+    MeteringMeasurement:
+      type: object
+      additionalProperties: false
+      required:
+      - disposition
+      - usage_event_id
+      properties:
+        disposition:
+          const: measurement
+        usage_event_id:
+          type: string
+          minLength: 1
+    WithheldDetail:
+      type: object
+      additionalProperties: false
+      required:
+      - code
+      - could_not_verify
+      - reason
+      properties:
+        code:
+          type: string
+          x-extensible-enum:
+          - WITHHELD_NO_RULES_TEXT
+          - WITHHELD_NO_FINITE_ESTIMATE
+          - WITHHELD_SOURCE_UNVERIFIED
+        could_not_verify:
+          type: string
+        reason:
+          type: string
+        verified_facts:
+          type: array
+          items: {}
+        retry:
+          type: object
+          additionalProperties: false
+          properties:
+            policy:
+              type: string
+        evidence_reference:
+          type: string
+    EvidenceSnapshot:
+      type: object
+      additionalProperties: false
+      required:
+      - sha256
+      - book_as_of
+      - universe_as_of
+      properties:
+        sha256:
+          type: string
+          pattern: ^[a-f0-9]{64}$
+        book_as_of:
+          type: string
+          format: date-time
+        universe_as_of:
+          type: string
+          format: date-time
+    CreateAssessmentRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - market
+      properties:
+        market:
+          type: string
+          minLength: 1
+          description: Stable Polymarket market identifier, supported slug, or supported canonical URL. It is normalized to one internal market identifier.
+        customer_reference:
+          type: string
+          maxLength: 200
+          description: Opaque customer correlation value. It is echoed and never interpreted.
+        webhook:
+          type: boolean
+          default: false
+          description: When true, enqueue the terminal assessment for every active endpoint in the same account and token environment that subscribes to the terminal event. If no active endpoint exists, the request returns WEBHOOK_NOT_CONFIGURED. Inline URLs are never accepted. Polling remains available independently.
+    AssessmentReleased:
+      allOf:
+      - $ref: '#/components/schemas/AssessmentCommon'
+      - type: object
+        required:
+        - assessed_at
+        - market
+        - resolution_risk
+        - risk_factors
+        - provenance
+        - metering
+        properties:
+          status:
+            const: released
+          assessed_at:
+            type: string
+            format: date-time
+          market:
+            $ref: '#/components/schemas/Market'
+          resolution_risk:
+            $ref: '#/components/schemas/ResolutionRisk'
+          risk_factors:
+            $ref: '#/components/schemas/RiskFactors'
+          provenance:
+            $ref: '#/components/schemas/Provenance'
+          metering:
+            $ref: '#/components/schemas/Metering'
+          rules_snapshot:
+            $ref: '#/components/schemas/RulesSnapshot'
+          evidence_snapshot:
+            $ref: '#/components/schemas/EvidenceSnapshot'
+          verified_facts:
+            type: array
+            items:
+              $ref: '#/components/schemas/VerifiedFact'
+          receipt:
+            $ref: '#/components/schemas/ReceiptReference'
+        oneOf:
+        - properties:
+            billable:
+              const: true
+            metering:
+              $ref: '#/components/schemas/MeteringBillable'
+        - properties:
+            billable:
+              const: false
+            metering:
+              $ref: '#/components/schemas/MeteringEvaluationCredit'
+        - properties:
+            billable:
+              const: false
+            metering:
+              $ref: '#/components/schemas/MeteringMeasurement'
+        - properties:
+            billable:
+              const: false
+            metering:
+              $ref: '#/components/schemas/MeteringCacheHit'
+        - properties:
+            billable:
+              const: false
+            metering:
+              $ref: '#/components/schemas/MeteringSandbox'
+          not:
+            required:
+            - receipt
+    AssessmentId:
+      type: string
+      pattern: ^ra_[a-f0-9]{32}$
+      examples:
+      - ra_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    AssessmentAccepted:
+      allOf:
+      - $ref: '#/components/schemas/AssessmentCommon'
+      - type: object
+        required:
+        - status_url
+        - polling
+        properties:
+          status:
+            const: accepted
+          billable:
+            const: false
+          status_url:
+            type: string
+            format: uri
+          polling:
+            $ref: '#/components/schemas/PollingGuidance'
+    RiskFactors:
+      type: object
+      additionalProperties: false
+      required:
+      - principal_reason_codes
+      - exact_rule_fragments
+      - alternative_interpretations
+      properties:
+        principal_reason_codes:
+          type: array
+          maxItems: 5
+          items:
+            type: string
+        exact_rule_fragments:
+          type: array
+          maxItems: 5
+          items:
+            type: string
+        alternative_interpretations:
+          type: array
+          maxItems: 5
+          items:
+            type: string
+        title_rules_mismatch:
+          type: boolean
+        upcoming_critical_dates:
+          type: array
+          maxItems: 20
+          items:
+            $ref: '#/components/schemas/CriticalDate'
+  responses:
+    InsufficientScope:
+      description: The credential is valid but lacks the operation's scope.
+      headers:
+        RateLimit-Limit:
+          $ref: '#/components/headers/RateLimit-Limit'
+        RateLimit-Remaining:
+          $ref: '#/components/headers/RateLimit-Remaining'
+        RateLimit-Reset:
+          $ref: '#/components/headers/RateLimit-Reset'
+        RateLimit-Scope:
+          $ref: '#/components/headers/RateLimit-Scope'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: INSUFFICIENT_SCOPE
+              message: This token lacks the required scope.
+              detail: This token lacks the 'resolution:request' scope.
+    BadRequest:
+      description: INVALID_REQUEST, INVALID_MARKET, INVALID_IDEMPOTENCY_KEY, or a token supplied in the URL.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    RateLimited:
+      description: The current shared per-token or per-account traffic bound was reached. Rate limiting is not purchased usage.
+      headers:
+        Retry-After:
+          $ref: '#/components/headers/Retry-After'
+        RateLimit-Limit:
+          $ref: '#/components/headers/RateLimit-Limit'
+        RateLimit-Remaining:
+          $ref: '#/components/headers/RateLimit-Remaining'
+        RateLimit-Reset:
+          $ref: '#/components/headers/RateLimit-Reset'
+        RateLimit-Scope:
+          $ref: '#/components/headers/RateLimit-Scope'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: RATE_LIMITED
+              message: Too many requests — slow down and retry.
+    InvalidToken:
+      description: Unknown, malformed, expired or revoked token. These cases are deliberately indistinguishable.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: INVALID_TOKEN
+              message: The bearer token is invalid, expired or revoked.
+    InternalError:
+      description: The request could not be completed safely. No assessment is released and the request is not billable.
+      headers:
+        RateLimit-Limit:
+          $ref: '#/components/headers/RateLimit-Limit'
+        RateLimit-Remaining:
+          $ref: '#/components/headers/RateLimit-Remaining'
+        RateLimit-Reset:
+          $ref: '#/components/headers/RateLimit-Reset'
+        RateLimit-Scope:
+          $ref: '#/components/headers/RateLimit-Scope'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: INTERNAL_ERROR
+              message: The request could not be completed safely.
+    ProviderUnavailable:
+      description: The live market resolver/provider is temporarily unavailable. No assessment is released and the request is not billable. Deterministic sandbox requests do not use this request-level fallback; the sv-sandbox-failed fixture produces a readable terminal failed resource.
+      headers:
+        RateLimit-Limit:
+          $ref: '#/components/headers/RateLimit-Limit'
+        RateLimit-Remaining:
+          $ref: '#/components/headers/RateLimit-Remaining'
+        RateLimit-Reset:
+          $ref: '#/components/headers/RateLimit-Reset'
+        RateLimit-Scope:
+          $ref: '#/components/headers/RateLimit-Scope'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: PROVIDER_UNAVAILABLE
+              message: The assessment provider is temporarily unavailable.
+  headers:
+    RateLimit-Scope:
+      description: The read or request bucket consumed by this authenticated operation.
+      x-availability: IMPLEMENTED_FEATURE_GATED
+      schema:
+        type: string
+        enum:
+        - read
+        - request
+    RateLimit-Limit:
+      description: Maximum requests in the token's current 60-second read or request bucket.
+      x-availability: IMPLEMENTED_FEATURE_GATED
+      schema:
+        type: integer
+        minimum: 0
+    Retry-After:
+      description: Whole seconds to wait before retrying. Implemented on 429 responses.
+      schema:
+        type: integer
+        minimum: 1
+    RateLimit-Reset:
+      description: Whole seconds until the current token and class window resets.
+      x-availability: IMPLEMENTED_FEATURE_GATED
+      schema:
+        type: integer
+        minimum: 0
+    RateLimit-Remaining:
+      description: Requests remaining in the current token and class bucket.
+      x-availability: IMPLEMENTED_FEATURE_GATED
+      schema:
+        type: integer
+        minimum: 0
+    Idempotent-Replayed:
+      description: Present with value true only when POST returned an existing idempotency-bound resource.
+      schema:
+        type: string
+        const: 'true'
+  examples:
+    FailedAssessment:
+      value:
+        assessment_id: ra_dddddddddddddddddddddddddddddddd
+        market_id: '1105752'
+        status: failed
+        created_at: '2026-08-03T16:15:00.000Z'
+        billable: false
+        error:
+          code: PROVIDER_UNAVAILABLE
+          detail: The assessment provider was temporarily unavailable.
+          retryable: true
+    ReleasedCacheHitAssessment:
+      value:
+        assessment_id: ra_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+        market_id: '1105752'
+        status: released
+        created_at: '2026-08-03T16:05:00.000Z'
+        billable: false
+        assessed_at: '2026-08-03T16:05:01.000Z'
+        market:
+          market_id: '1105752'
+          title: Will the example market resolve?
+          condition_id: null
+          slug: example-market
+        resolution_risk:
+          classification: ELEVATED_RESOLUTION_RISK
+          risk_basis: CALIBRATED
+        risk_factors:
+          principal_reason_codes: []
+          exact_rule_fragments: []
+          alternative_interpretations: []
+        provenance:
+          record_schema: watch-record-v2
+          limitations: []
+        metering:
+          disposition: cache_hit
+    ReleasedEvaluationCreditAssessment:
+      value:
+        assessment_id: ra_11111111111111111111111111111111
+        market_id: '1105752'
+        status: released
+        created_at: '2026-08-03T16:02:00.000Z'
+        billable: false
+        assessed_at: '2026-08-03T16:02:08.000Z'
+        market:
+          market_id: '1105752'
+          title: Will the example market resolve?
+          condition_id: null
+          slug: example-market
+        rules_snapshot:
+          sha256: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+          captured_at: '2026-08-03T16:01:30.000Z'
+        evidence_snapshot:
+          sha256: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+          book_as_of: '2026-08-03T16:01:45.000Z'
+          universe_as_of: '2026-08-03T16:01:45.000Z'
+        resolution_risk:
+          classification: ELEVATED_RESOLUTION_RISK
+          risk_basis: CALIBRATED
+          confidence: MEDIUM
+          modelled:
+            dispute_probability: 0.31
+            ambiguity_score: 0.62
+        risk_factors:
+          principal_reason_codes:
+          - AMBIGUOUS_DEADLINE
+          exact_rule_fragments:
+          - The official source must confirm the result.
+          alternative_interpretations:
+          - Confirmation may occur after the named deadline.
+          title_rules_mismatch: false
+        provenance:
+          record_schema: watch-record-v2
+          model_version: rr2-v1
+          limitations: []
+        metering:
+          disposition: evaluation_credit
+          usage_event_id: usage-evaluation-credit-example
+    ProcessingAssessment:
+      value:
+        assessment_id: ra_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        market_id: '1105752'
+        status: processing
+        created_at: '2026-08-03T16:00:00.000Z'
+        billable: false
+        customer_reference: case-2026-08-03
+    SandboxReleasedAssessment:
+      value:
+        assessed_at: '2026-08-03T00:00:00.000Z'
+        market:
+          market_id: '9900001'
+          condition_id: null
+          slug: sv-sandbox-released-calibrated
+          title: 'Sandbox: calibrated resolution-risk assessment'
+        rules_snapshot:
+          sha256: 328310be4020d2a1e2614b0991a35fd04541b41629048e44e27f3f493cdaa2d8
+          captured_at: '2026-08-03T00:00:00.000Z'
+        evidence_snapshot:
+          sha256: 73c9df16313991ba333a2717ea387f8722588076222dcb14eaf436c23cd6ba60
+          book_as_of: '2026-08-03T00:00:00.000Z'
+          universe_as_of: '2026-08-03T00:00:00.000Z'
+        resolution_risk:
+          classification: HIGH_RESOLUTION_RISK
+          risk_basis: CALIBRATED
+          modelled:
+            dispute_probability: 0.31
+            ambiguity_score: 0.62
+            source_reliability_score: 0.4
+            timezone_risk: 0.1
+            cancellation_risk: 0.05
+          calibrated_estimate:
+            p_cal: 0.27
+            bucket_n: 119
+            ci_low: 0.2
+            ci_high: 0.35
+            model_version: resolution-sandbox-v1@calibrated
+          confidence: MEDIUM
+        risk_factors:
+          principal_reason_codes:
+          - CONFLICTING_SOURCES
+          - TIMEZONE_AMBIGUITY
+          exact_rule_fragments:
+          - according to Source A or Source B
+          alternative_interpretations:
+          - The two named sources can publish different outcomes.
+          title_rules_mismatch: false
+          upcoming_critical_dates: []
+        verified_facts:
+        - kind: SANDBOX_FIXTURE
+          statement: This is a fixed deterministic sandbox fixture; it is not a live-market claim.
+          as_of: '2026-08-03T00:00:00.000Z'
+        provenance:
+          record_schema: watch-record-v2
+          model_version: resolution-sandbox-v1@calibrated
+          evidence_freshness:
+            rules_as_of: '2026-08-03T00:00:00.000Z'
+            book_as_of: '2026-08-03T00:00:00.000Z'
+            universe_as_of: '2026-08-03T00:00:00.000Z'
+          limitations:
+          - Deterministic sandbox data only; no live provider or customer data was read.
+        metering:
+          disposition: sandbox
+        assessment_id: ra_eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+        market_id: '9900001'
+        status: released
+        created_at: '2026-08-03T19:00:00.000Z'
+        billable: false
+    AcceptedAssessment:
+      value:
+        assessment_id: ra_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        market_id: '1105752'
+        status: accepted
+        created_at: '2026-08-03T16:00:00.000Z'
+        billable: false
+        customer_reference: case-2026-08-03
+        status_url: https://scanverity.com/v1/resolution-assessments/ra_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        polling:
+          recommended_interval_seconds: 3
+          typical_completion_seconds: 10
+    ReleasedMeasurementAssessment:
+      value:
+        assessment_id: ra_22222222222222222222222222222222
+        market_id: '1105752'
+        status: released
+        created_at: '2026-08-03T16:03:00.000Z'
+        billable: false
+        assessed_at: '2026-08-03T16:03:08.000Z'
+        market:
+          market_id: '1105752'
+          title: Will the example market resolve?
+          condition_id: null
+          slug: example-market
+        rules_snapshot:
+          sha256: cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+          captured_at: '2026-08-03T16:02:30.000Z'
+        evidence_snapshot:
+          sha256: dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+          book_as_of: '2026-08-03T16:02:45.000Z'
+          universe_as_of: '2026-08-03T16:02:45.000Z'
+        resolution_risk:
+          classification: ELEVATED_RESOLUTION_RISK
+          risk_basis: CALIBRATED
+          confidence: MEDIUM
+          modelled:
+            dispute_probability: 0.31
+            ambiguity_score: 0.62
+        risk_factors:
+          principal_reason_codes:
+          - AMBIGUOUS_DEADLINE
+          exact_rule_fragments:
+          - The official source must confirm the result.
+          alternative_interpretations:
+          - Confirmation may occur after the named deadline.
+          title_rules_mismatch: false
+        provenance:
+          record_schema: watch-record-v2
+          model_version: rr2-v1
+          limitations: []
+        metering:
+          disposition: measurement
+          usage_event_id: usage-measurement-example
+    WithheldAssessment:
+      value:
+        assessment_id: ra_cccccccccccccccccccccccccccccccc
+        market_id: '1105752'
+        status: withheld
+        created_at: '2026-08-03T16:10:00.000Z'
+        billable: false
+        withheld:
+          code: WITHHELD_NO_RULES_TEXT
+          could_not_verify: The market's decisive rules text could not be verified.
+          reason: Publishing a resolution-risk assessment without verified rules would be unreliable.
+          verified_facts: []
+          retry:
+            policy: retried when the blocking input changes and at the next scheduled assessment
+    ReleasedBillableAssessment:
+      value:
+        assessment_id: ra_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        market_id: '1105752'
+        status: released
+        created_at: '2026-08-03T16:00:00.000Z'
+        billable: true
+        customer_reference: case-2026-08-03
+        assessed_at: '2026-08-03T16:00:08.000Z'
+        market:
+          market_id: '1105752'
+          title: Will the example market resolve?
+          condition_id: null
+          slug: example-market
+        resolution_risk:
+          classification: ELEVATED_RESOLUTION_RISK
+          risk_basis: CALIBRATED
+          confidence: MEDIUM
+          modelled:
+            dispute_probability: 0.31
+            ambiguity_score: 0.62
+          calibrated_estimate:
+            p_cal: 0.27
+            bucket_n: 30
+            model_version: rr2-v1
+        risk_factors:
+          principal_reason_codes:
+          - AMBIGUOUS_DEADLINE
+          exact_rule_fragments:
+          - The official source must confirm the result.
+          alternative_interpretations:
+          - Confirmation may occur after the named deadline.
+          title_rules_mismatch: false
+        provenance:
+          record_schema: watch-record-v2
+          model_version: rr2-v1
+          limitations:
+          - The source carries no explicit publication schedule.
+          evidence_freshness:
+            rules_as_of: '2026-08-03T15:59:30.000Z'
+            book_as_of: null
+        metering:
+          disposition: billable
+          usage_event_id: usage-correlation-example
+  parameters:
+    AssessmentId:
+      name: assessment_id
+      in: path
+      required: true
+      description: Account-scoped immutable assessment identifier.
+      schema:
+        $ref: '#/components/schemas/AssessmentId'
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: One to 255 printable ASCII characters, with no leading or trailing whitespace. The binding is scoped to account plus token and retained for exactly 30 days. Same key and canonical payload replay; a different canonical payload returns 409.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 255
+        pattern: ^[\u0020-\u007E]+$
+  securitySchemes:
+    bearerToken:
+      type: http
+      scheme: bearer
+      bearerFormat: svr_live_… or svr_sandbox_…
+      description: Reveal-once, account-scoped, environment-bound Resolution API token sent only in Authorization. Legacy svk_ Professional tokens are rejected. Query-string tokens are rejected. All four scope names are deny-by-default; usage:read authorizes only the live reconciled-usage routes, while webhooks:manage authorizes only the endpoint registry and delivery-log operations. Unknown, expired and revoked credentials intentionally share INVALID_TOKEN.
+x-scanverity-capability-status:
+  statusVocabulary:
+  - IMPLEMENTED
+  - IMPLEMENTED_FEATURE_GATED
+  - NOT_YET_AVAILABLE
+  operations:
+    POST /v1/resolution-assessments: IMPLEMENTED_FEATURE_GATED
+    GET /v1/resolution-assessments/{assessment_id}: IMPLEMENTED_FEATURE_GATED
+    GET /v1/resolution-assessments: NOT_YET_AVAILABLE
+    GET /v1/usage: IMPLEMENTED_FEATURE_GATED
+    GET /v1/usage/events: IMPLEMENTED_FEATURE_GATED
+    POST /v1/webhook-endpoints: IMPLEMENTED_FEATURE_GATED
+    GET /v1/webhook-endpoints: IMPLEMENTED_FEATURE_GATED
+    DELETE /v1/webhook-endpoints/{endpoint_id}: IMPLEMENTED_FEATURE_GATED
+    GET /v1/webhook-endpoints/{endpoint_id}/deliveries: IMPLEMENTED_FEATURE_GATED
+    POST /v1/webhook-endpoints/{endpoint_id}/redeliver/{delivery_id}: IMPLEMENTED_FEATURE_GATED
+  scopes:
+    resolution:read: IMPLEMENTED_FEATURE_GATED
+    resolution:request: IMPLEMENTED_FEATURE_GATED
+    usage:read: IMPLEMENTED_FEATURE_GATED
+    webhooks:manage: IMPLEMENTED_FEATURE_GATED
+  environmentBoundTokens: IMPLEMENTED_FEATURE_GATED
+  deterministicSandboxAssessments: IMPLEMENTED_FEATURE_GATED
+  webhookDelivery: IMPLEMENTED_FEATURE_GATED
+  reconciledUsageApi: IMPLEMENTED_FEATURE_GATED
+  usageAndInvoiceApi: NOT_YET_AVAILABLE
+  invoiceApi: NOT_YET_AVAILABLE
+  standardRateLimitHeaders: IMPLEMENTED_FEATURE_GATED
+  publicDocumentationRoute: IMPLEMENTED
+x-scanverity-documentation:
+  sourceIndex: docs/resolution-api/README.md
+  sourceContract: docs/resolution-api/openapi.json
+  sourceChangelog: docs/resolution-api/CHANGELOG.md
+  publicIndex: https://scanverity.com/resolution-api/docs
+  publicContract: https://scanverity.com/resolution-api/openapi.json
+  availability: IMPLEMENTED
+x-scanverity-fair-billing:
+  exactCopy: You are charged only when Scanverity releases a new assessment. Cache hits, failed requests and withheld assessments are not billed.
+  billablePredicate: status is released and billable is true and metering.disposition is billable
+  nonBillable:
+  - idempotent duplicate
+  - cache hit
+  - read
+  - poll
+  - 4xx response
+  - 5xx response
+  - timeout
+  - failed assessment
+  - withheld assessment
+  - webhook delivery, automatic retry or manual redelivery
+  - sandbox call
+  - response without a released assessment
+  pricingAvailability: PUBLISHED
+  ratecardAvailability: PUBLISHED
+  billingAvailability: PRIVATE_BETA_MANUAL_PROVISIONING
+  pricingVersion: rc-2026-08-04.launch.1
+  pricingUrl: /pricing
+x-scanverity-rate-limits:
+  windowSeconds: 60
+  scope: per token and separated by read or request class
+  live:
+    read: 120
+    request: 60
+  sandbox:
+    read: 30
+    request: 10
+  headers:
+  - RateLimit-Limit
+  - RateLimit-Remaining
+  - RateLimit-Reset
+  - RateLimit-Scope
+  limitedHeader: Retry-After
+  availability: IMPLEMENTED_FEATURE_GATED
+  note: A rate limit is a traffic-protection bound, not a purchased quota unit; purchased usage is tracked separately, and neither implies the other.
+x-scanverity-sandbox:
+  availability: IMPLEMENTED_FEATURE_GATED
+  version: resolution-sandbox-v1
+  fixedAssessedAt: '2026-08-03T00:00:00.000Z'
+  tokenEnvironment: sandbox
+  liveResolverOrCustomerDataRead: false
+  billable: false
+  markets:
+  - market: sv-sandbox-released-calibrated
+    result: released_calibrated
+  - market: sv-sandbox-released-modelled-only
+    result: released_modelled_only
+  - market: sv-sandbox-withheld-no-rules
+    result: WITHHELD_NO_RULES_TEXT
+  - market: sv-sandbox-withheld-no-finite-estimate
+    result: WITHHELD_NO_FINITE_ESTIMATE
+  - market: sv-sandbox-withheld-source-unverified
+    result: WITHHELD_SOURCE_UNVERIFIED
+  - market: sv-sandbox-failed
+    result: terminal_PROVIDER_UNAVAILABLE
+  - market: sv-sandbox-rate-limit
+    result: released_calibrated
+  - market: sv-sandbox-ambiguous
+    result: INVALID_MARKET
+  - market: sv-sandbox-unsupported
+    result: UNSUPPORTED_MARKET
+x-scanverity-webhooks:
+  availability: IMPLEMENTED_FEATURE_GATED
+  requiredScope: webhooks:manage
+  accountAndEnvironmentScoped: true
+  events:
+  - assessment.released
+  - assessment.withheld
+  - assessment.failed
+  envelopeSchemaVersion: v1
+  signatureHeader: Scanverity-Signature
+  deliveryIdHeader: Scanverity-Delivery-Id
+  signatureFormat: t=<unix>, v1=<hex HMAC-SHA256(secret,"<t>.<raw-body>")>
+  signatureToleranceSeconds: 300
+  stableDeliveryIdAcrossAutomaticAttempts: true
+  attemptOffsetsSeconds:
+  - 60
+  - 300
+  - 1800
+  - 7200
+  - 28800
+  maximumAttempts: 5
+  appendOnlyDeliveryLogDays: 90
+  continuousFailureAutoDisableDays: 3
+  manualRedeliveryAudited: true
+  deliveryAndRedeliveryBillable: false
+  pollingRemainsAvailable: true
+  targetPolicy: Credential-free HTTPS on port 443; public DNS only; validated at registration and again before delivery; validated address pinned; redirects are not followed.
+  revealOnceSecretPrefix: svrwhsec_
+x-scanverity-retention:
+  idempotencyBindingDays: 30
+  idempotencyBindingAvailability: IMPLEMENTED_FEATURE_GATED
+  financialUsageEvidenceMinimumYearsAfterFinancialYear: 7
+  financialUsageEvidenceControl: IMPLEMENTED_INTERNAL_CONTROL
+  assessmentResourceGuarantee: NOT_YET_AVAILABLE
+  webhookDeliveryLogDays: 90
+  webhookDeliveryLogControl: IMPLEMENTED_FEATURE_GATED
+  postTerminationExportGuarantee: NOT_YET_AVAILABLE

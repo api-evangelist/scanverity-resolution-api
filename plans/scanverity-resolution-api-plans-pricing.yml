@@ -1,0 +1,113 @@
+generated: '2026-09-04'
+method: searched
+source: https://scanverity.com/en/pricing
+name: Scanverity Resolution API plans and pricing
+description: >-
+  Published, self-serve pricing in EUR. Two distinct ladders exist on one page: the human product
+  subscriptions (Explorer through Team) and the usage-based Resolution API tiers. Only the API
+  ladder governs this record's API; the subscription ladder is recorded for context because the
+  Professional tier is what carries the separate legacy workspace API.
+docs: https://scanverity.com/en/pricing
+currency: EUR
+tax_note: All listed prices exclude VAT.
+pricing_version: rc-2026-08-04.launch.1
+plan_count: 6
+billing_model: monthly minimum acting as usage credit, plus per-unit overage
+billing_unit: one newly released, billable assessment
+plans:
+  - name: Sandbox
+    price: 0
+    currency: EUR
+    period: month
+    included: Deterministic fixture catalog only
+    overage: null
+    limits:
+      read_per_minute: 30
+      request_per_minute: 10
+    notes: Never billable. Never calls the live resolver.
+  - name: Production Evaluation
+    price: 0
+    currency: EUR
+    period: one-time
+    included: 10 newly released assessments
+    validity: 30 days
+    overage: null
+    notes: No payment required. Released assessments are metered as evaluation_credit and bill zero.
+  - name: Builder
+    price: 100
+    currency: EUR
+    period: month
+    price_type: monthly minimum
+    included: 25 released assessments
+    overage:
+      unit_price: 4.00
+      currency: EUR
+      per: additional released assessment
+    limits:
+      read_per_minute: 120
+      request_per_minute: 60
+  - name: Growth
+    price: 300
+    currency: EUR
+    period: month
+    price_type: monthly minimum
+    included: 120 released assessments
+    overage:
+      unit_price: 2.50
+      currency: EUR
+      per: additional released assessment
+    limits:
+      read_per_minute: 120
+      request_per_minute: 60
+  - name: Scale
+    price: 750
+    currency: EUR
+    period: month
+    price_type: monthly minimum
+    included: 500 released assessments
+    overage:
+      unit_price: 1.50
+      currency: EUR
+      per: additional released assessment
+    limits:
+      read_per_minute: 120
+      request_per_minute: 60
+  - name: Enterprise
+    price: 2000
+    price_qualifier: from
+    currency: EUR
+    period: month
+    price_type: minimum commitment
+    included: custom
+    overage: custom
+    notes: Custom commercial terms.
+credit_behaviour: >-
+  The monthly minimum works as usage credit -- included usage is never charged on top, and unused
+  credit expires at the end of the billing period.
+billing_predicate: >-
+  A call bills only when status is released AND billable is true AND metering.disposition is
+  billable.
+never_billable:
+  - idempotent duplicate
+  - cache hit
+  - read
+  - poll
+  - 4xx response
+  - 5xx response
+  - timeout
+  - failed assessment
+  - withheld assessment
+  - webhook delivery, automatic retry or manual redelivery
+  - sandbox call
+usage_visibility:
+  operations: [getResolutionUsageSummary, listResolutionUsageEvents]
+  note: Reconciled monthly totals and per-event evidence are readable through the API itself.
+related_subscription_products:
+  note: >-
+    Separate human-facing subscription ladder on the same page, NOT the Resolution API. Recorded for
+    context only.
+  tiers:
+    - { name: Explorer, price: 9.99, currency: EUR, period: month }
+    - { name: Researcher, price: 49, currency: EUR, period: month }
+    - { name: Professional, price: 129, currency: EUR, period: month, note: includes the separate Professional workspace API }
+    - { name: Team, price: 349, currency: EUR, period: month }

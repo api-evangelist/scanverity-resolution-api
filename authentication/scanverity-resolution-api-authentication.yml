@@ -1,0 +1,57 @@
+generated: '2026-09-04'
+method: searched
+source: https://scanverity.com/resolution-api/docs
+derived_from: openapi/scanverity-resolution-api-openapi.json
+name: Scanverity Resolution API authentication profile
+description: >-
+  Single-scheme HTTP Bearer authentication using opaque, reveal-once, account-scoped and
+  environment-bound tokens. There is no OAuth 2.0, no OpenID Connect and no mutual TLS. Scopes are
+  carried by the token itself rather than negotiated at an authorization server, and every scope is
+  deny-by-default.
+docs: https://scanverity.com/resolution-api/docs
+schemes:
+  - id: bearerToken
+    type: http
+    scheme: bearer
+    in: header
+    header: Authorization
+    format: "svr_live_... or svr_sandbox_..."
+    description: >-
+      Reveal-once, account-scoped, environment-bound Resolution API token. Sent only in the
+      Authorization header; query-string tokens are rejected with INVALID_REQUEST. Legacy svk_
+      Professional workspace tokens are explicitly rejected by this API.
+    applied_to: all operations
+    token_prefixes:
+      - prefix: svr_live_
+        environment: live
+        note: Live tokens bill released assessments and are the only tokens accepted on the reconciled-usage routes.
+      - prefix: svr_sandbox_
+        environment: sandbox
+        note: Sandbox tokens read only the closed deterministic fixture catalog; every sandbox result is non-billable.
+      - prefix: svk_
+        environment: rejected
+        note: Legacy Professional workspace token. Intentionally rejected by the Resolution API.
+environments:
+  - name: live
+    token_prefix: svr_live_
+  - name: sandbox
+    token_prefix: svr_sandbox_
+scopes_model:
+  style: token-bound named scopes (not OAuth 2.0)
+  default: deny
+  reference: scopes/scanverity-resolution-api-scopes.yml
+failure_modes:
+  - status: 401
+    code: INVALID_TOKEN
+    note: >-
+      Unknown, malformed, expired and revoked credentials deliberately share one indistinguishable
+      response so a caller cannot enumerate token state.
+  - status: 403
+    code: INSUFFICIENT_SCOPE
+    note: The credential is valid but does not carry the scope the operation requires.
+  - status: 400
+    code: INVALID_REQUEST
+    note: Returned when a token is supplied in the URL rather than the Authorization header.
+notes:
+  - Token secrets are revealed once at creation and are never returned by later reads.
+  - Access is private beta and feature-gated; a valid token still requires an entitled, allowlisted account.

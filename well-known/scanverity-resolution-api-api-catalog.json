@@ -1,0 +1,36 @@
+{
+  "linkset": [
+    {
+      "anchor": "https://scanverity.com/resolution-api/docs",
+      "service-desc": [
+        {
+          "href": "https://scanverity.com/resolution-api/openapi.json",
+          "type": "application/json"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://scanverity.com/resolution-api/docs",
+          "type": "text/html"
+        }
+      ],
+      "service-meta": [
+        {
+          "href": "https://scanverity.com/en/legal/resolution-api-addendum",
+          "type": "text/html",
+          "title": "Resolution API Commercial Addendum"
+        },
+        {
+          "href": "https://scanverity.com/en/legal/privacy",
+          "type": "text/html",
+          "title": "Privacy policy"
+        },
+        {
+          "href": "https://scanverity.com/en/contact",
+          "type": "text/html",
+          "title": "Contact"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,80 @@
+generated: '2026-09-04'
+method: searched
+source: https://scanverity.com/resolution-api/docs
+derived_from: openapi/scanverity-resolution-api-openapi.json
+name: Scanverity Resolution API lifecycle
+description: >-
+  Versioning, deprecation and availability posture. The provider publishes an unusually explicit
+  deprecation contract -- RFC 8594 Deprecation and Sunset headers declared in the spec plus a stated
+  six-month minimum notice -- while simultaneously declining to make any uptime or latency promise,
+  because the API is private beta and feature-gated.
+docs: https://scanverity.com/resolution-api/docs
+
+versioning:
+  scheme: major version in URL path
+  current_version: v1
+  contract_version: 1.3.0-private-beta
+  breaking_change_policy: Breaking changes ship under a new major path.
+  deprecated: false
+  note: v1 is not currently deprecated.
+
+deprecation_policy:
+  published: true
+  minimum_notice: 6 months
+  statement: >-
+    Before retiring a live version or operation, Scanverity provides at least six months' notice.
+  signalling:
+    standard: RFC 8594
+    headers:
+      - name: Deprecation
+        declared_in_spec: true
+        description: Emitted only after a version or operation is formally deprecated.
+      - name: Sunset
+        declared_in_spec: true
+        description: HTTP date after which a deprecated operation may stop responding, with at least six months' notice.
+  currently_emitted: false
+
+deprecated_operations: []
+
+availability:
+  access_status: PRIVATE_BETA
+  runtime_availability: FEATURE_GATED
+  production_feature_flag: NOT_ASSERTED_ENABLED
+  note: >-
+    The provider states in its own apis.json meta block and in the OpenAPI description that
+    publication of the contract does not assert the production feature flag is enabled. A live call
+    requires an entitled, allowlisted account.
+
+sla:
+  published: false
+  statement: Private beta carries no uptime or response-time promise.
+  latency_guidance:
+    typical_completion_seconds: 10
+    qualifier: Indicative behaviour, explicitly not a completion guarantee or service-level commitment.
+
+status_page:
+  present: false
+  probed:
+    - url: https://status.scanverity.com/
+      result: DNS does not resolve
+    - url: https://scanverity.com/status
+      status: 404
+  note: No status page is published. No StatusPage pointer is emitted.
+
+data_retention:
+  idempotency_key_binding: 30 days
+  webhook_delivery_evidence: 90 days
+  webhook_endpoint_records: at most 10 retained per account per environment
+  usage_reconciliation_period: UTC calendar month
+
+changelog:
+  present: false
+  probed:
+    - url: https://scanverity.com/changelog
+      status: 404
+    - url: https://scanverity.com/en/changelog
+      status: 404
+  note: >-
+    No dated changelog is published. Version identity is carried instead by the contract version
+    string (1.3.0-private-beta) and the pricing version (rc-2026-08-04.launch.1). No ChangeLog
+    pointer is emitted.

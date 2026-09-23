@@ -1,0 +1,74 @@
+generated: '2026-09-04'
+method: searched
+source: https://scanverity.com/resolution-api/docs
+derived_from: openapi/scanverity-resolution-api-openapi.json
+name: Scanverity Resolution API webhook catalog
+description: >-
+  The provider ships a fully documented signed-webhook surface with a registration API, HMAC
+  signatures, a published retry schedule, append-only delivery evidence and audited manual
+  redelivery. It does NOT publish an AsyncAPI document, so this is a webhook catalog rather than an
+  event specification; no AsyncAPI pointer is emitted and none was authored.
+docs: https://scanverity.com/resolution-api/docs
+asyncapi_published: false
+asyncapi_probed:
+  - url: https://scanverity.com/asyncapi.yaml
+    note: not published; the provider's own api-catalog linkset advertises only the OpenAPI as service-desc
+
+transport: HTTPS POST
+destination_requirements:
+  - credential-free public HTTPS
+  - port 443
+  - must pass DNS/SSRF validation
+  - inline per-request URLs are never accepted; endpoints must be pre-registered
+environments: [live, sandbox]
+environment_binding: >-
+  Endpoints are scoped to the token's account AND environment. Cross-account and cross-environment
+  identifiers return NOT_FOUND, deliberately indistinguishable from unknown ids.
+max_endpoints_per_environment: 10
+
+events:
+  - name: assessment.released
+    description: A requested assessment reached the terminal released state and carries a resolution-risk figure.
+    payload_schema: AssessmentReleased
+  - name: assessment.withheld
+    description: The assessment terminated without stating a risk figure; the body carries a WithheldDetail explaining what could not be verified.
+    payload_schema: AssessmentWithheld
+  - name: assessment.failed
+    description: The assessment terminated in failure; the body carries a TerminalError with a retryable flag.
+    payload_schema: AssessmentFailed
+event_count: 3
+subscription: Each endpoint subscribes to between one and three of the events above.
+
+signature:
+  header: Scanverity-Signature
+  format: 't=<unix>, v1=<hex HMAC-SHA256(secret, "<t>.<raw-body>")>'
+  algorithm: HMAC-SHA256
+  signed_payload: '<timestamp>.<raw request body>'
+  tolerance_seconds: 300
+  secret_prefix: svrwhsec_
+  secret_delivery: Revealed once in the create response only; never returned by later reads; encrypted at rest.
+
+delivery:
+  id_header: Scanverity-Delivery-Id
+  id_stability: Automatic attempts reuse the delivery id; manual redelivery creates a new id linked by redelivery_of.
+  retry_schedule_seconds: [60, 300, 1800, 7200, 28800]
+  max_attempts_per_group: 5
+  auto_disable_after: 3 days of continuous failure
+  evidence_retention_days: 90
+  evidence_model: append-only; original delivery groups are never rewritten
+  billable: false
+
+operations:
+  register: createResolutionWebhookEndpoint
+  list: listResolutionWebhookEndpoints
+  delete: deleteResolutionWebhookEndpoint
+  list_deliveries: listResolutionWebhookDeliveries
+  redeliver: redeliverResolutionWebhook
+
+delivery_states: [pending, delivered, failed, cancelled]
+endpoint_states: [enabled, disabled]
+
+opt_in: >-
+  Webhook fan-out is requested per assessment with webhook=true. If no active endpoint exists in the
+  same account and environment, the create call returns 422 WEBHOOK_NOT_CONFIGURED. Polling remains
+  available independently of webhooks.

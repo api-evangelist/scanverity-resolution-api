@@ -1,0 +1,113 @@
+overlay: 1.0.0
+info:
+  title: API Evangelist enrichment overlay for the Scanverity Resolution API
+  version: 1.0.0
+  description: >-
+    Non-destructive overlay recording API Evangelist's enrichment of the provider's published
+    OpenAPI. It adds catalog cross-references and agent-facing consequence metadata. It changes no
+    provider-authored field: every action targets an x- extension or adds a document-level
+    annotation. The original contract at openapi/_original/ is never mutated.
+extends: ../openapi/scanverity-resolution-api-openapi.json
+x-generated: '2026-09-04'
+x-method: generated
+x-source: openapi/scanverity-resolution-api-openapi.json
+actions:
+  - target: $.info
+    description: Record the catalog provenance of this profile alongside the provider's own info block.
+    update:
+      x-apievangelist-profile: https://github.com/api-evangelist/scanverity-resolution-api
+      x-apievangelist-enriched: '2026-09-04'
+      x-access-status: PRIVATE_BETA
+      x-runtime-availability: FEATURE_GATED
+
+  - target: $
+    description: Cross-reference the derived catalog artifacts from the document root.
+    update:
+      x-apievangelist-artifacts:
+        authentication: authentication/scanverity-resolution-api-authentication.yml
+        scopes: scopes/scanverity-resolution-api-scopes.yml
+        conventions: conventions/scanverity-resolution-api-conventions.yml
+        errors: errors/scanverity-resolution-api-problem-types.yml
+        rate_limits: rate-limits/scanverity-resolution-api-rate-limits.yml
+        plans: plans/scanverity-resolution-api-plans-pricing.yml
+        sandbox: sandbox/scanverity-resolution-api-sandbox.yml
+        lifecycle: lifecycle/scanverity-resolution-api-lifecycle.yml
+        webhooks: asyncapi/scanverity-resolution-api-webhooks.yml
+        data_model: data-model/scanverity-resolution-api-data-model.yml
+        conformance: conformance/scanverity-resolution-api-conformance.yml
+        skills: skills/_index.yml
+
+  - target: $.paths['/v1/resolution-assessments'].post
+    description: Classify the only billable write on the surface for agent consumption.
+    update:
+      x-agentic-access:
+        action-class: write
+        consequence: billable
+        reversible: via-usage-adjustment
+        reversal-note: >-
+          No cancel operation exists. A released assessment is credited back through the reconciled
+          usage ledger (adjustment_quantity -1) within the UTC billing month, not deleted.
+        idempotent: required
+        idempotency-header: Idempotency-Key
+        scope: resolution:request
+        escalation: human-review-recommended
+
+  - target: $.paths['/v1/resolution-assessments/{assessment_id}'].get
+    description: Mark the poll route as free and safe to retry.
+    update:
+      x-agentic-access:
+        action-class: read
+        consequence: none
+        reversible: na
+        idempotent: inherent
+        scope: resolution:read
+        polling: 'recommended_interval_seconds: 3'
+
+  - target: $.paths['/v1/webhook-endpoints'].post
+    description: Classify endpoint registration, which reveals a secret exactly once.
+    update:
+      x-agentic-access:
+        action-class: write
+        consequence: non-billable
+        reversible: true
+        reversal-operation: deleteResolutionWebhookEndpoint
+        idempotent: false
+        scope: webhooks:manage
+        escalation: human-review-required
+        note: The signing secret is reveal-once and cannot be re-read; losing it requires re-registration.
+
+  - target: $.paths['/v1/webhook-endpoints/{endpoint_id}'].delete
+    description: Classify the destructive endpoint removal.
+    update:
+      x-agentic-access:
+        action-class: delete
+        consequence: destructive
+        reversible: false
+        reversal-note: >-
+          The endpoint and its signing secret are erased and pending work is cancelled. Append-only
+          delivery evidence survives for 90 days but the endpoint cannot be restored.
+        idempotent: inherent
+        scope: webhooks:manage
+        escalation: human-review-required
+
+  - target: $.paths['/v1/webhook-endpoints/{endpoint_id}/redeliver/{delivery_id}'].post
+    description: Classify manual redelivery as an append-only, non-billable write.
+    update:
+      x-agentic-access:
+        action-class: write
+        consequence: non-billable
+        reversible: na
+        reversal-note: Creates a new delivery group linked by redelivery_of; the original is never rewritten.
+        idempotent: false
+        scope: webhooks:manage
+
+  - target: $.components.securitySchemes.bearerToken
+    description: Attach the enumerated token scopes to the security scheme, which the contract describes only in prose.
+    update:
+      x-scopes:
+        - resolution:request
+        - resolution:read
+        - usage:read
+        - webhooks:manage
+      x-scope-default: deny
+      x-scope-reference: scopes/scanverity-resolution-api-scopes.yml

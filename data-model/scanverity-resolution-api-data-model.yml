@@ -1,0 +1,181 @@
+generated: '2026-09-04'
+method: derived
+source: openapi/scanverity-resolution-api-openapi.json
+name: Scanverity Resolution API data model
+description: >-
+  Entity-relationship graph derived from the contract's $ref graph and its id-reference fields.
+  Three root entities -- Assessment, WebhookEndpoint and ResolutionUsageEvent -- with the assessment
+  acting as the hub: the usage ledger references it for billing and every webhook delivery
+  references it as the thing being announced.
+docs: https://scanverity.com/resolution-api/docs
+entity_count: 8
+id_prefixes:
+  - prefix: ra_
+    entity: Assessment
+    pattern: '^ra_[a-f0-9]{32}$'
+  - prefix: whe_
+    entity: WebhookEndpoint
+    pattern: '^whe_[a-f0-9]{32}$'
+  - prefix: wd_
+    entity: WebhookDelivery
+    pattern: '^wd_[a-f0-9]{32}$'
+  - prefix: null
+    entity: ResolutionUsageEvent
+    pattern: 26-character Crockford ULID
+
+entities:
+  - name: Assessment
+    root: true
+    schema: Assessment
+    kind: polymorphic
+    discriminator: status
+    variants: [AssessmentAccepted, AssessmentProcessing, AssessmentReleased, AssessmentWithheld, AssessmentFailed]
+    identity: assessment_id
+    common_schema: AssessmentCommon
+    key_fields: [assessment_id, market_id, status, created_at, billable, customer_reference]
+    lifecycle: accepted -> processing -> (released | withheld | failed)
+    relationships:
+      - has_one: Market
+        via: market
+      - has_one: ResolutionRisk
+        via: resolution_risk
+        when: status is released
+      - has_one: RiskFactors
+        via: risk_factors
+        when: status is released
+      - has_one: Provenance
+        via: provenance
+        when: status is released
+      - has_one: Metering
+        via: metering
+      - has_one: RulesSnapshot
+        via: rules_snapshot
+        optional: true
+      - has_one: EvidenceSnapshot
+        via: evidence_snapshot
+        optional: true
+      - has_many: VerifiedFact
+        via: verified_facts
+      - has_one: ReceiptReference
+        via: receipt
+        optional: true
+      - has_one: WithheldDetail
+        via: withheld
+        when: status is withheld
+      - has_one: TerminalError
+        via: error
+        when: status is failed
+      - has_one: PollingGuidance
+        via: polling_guidance
+        when: status is accepted or processing
+
+  - name: Market
+    schema: Market
+    identity: market_id
+    key_fields: [market_id, title, condition_id, slug, canonical_url]
+    note: >-
+      condition_id is the Polymarket on-chain condition identifier, a 0x-prefixed 32-byte hex value.
+      market_id is a numeric string. Both are nullable.
+    relationships:
+      - belongs_to: Assessment
+        via: market
+
+  - name: ResolutionRisk
+    schema: ResolutionRisk
+    relationships:
+      - has_one: ModelledRisk
+        via: modelled
+      - has_one: Calibration
+        via: calibration
+      - has_one: UnitInterval
+        via: probability-bearing fields
+
+  - name: Metering
+    schema: Metering
+    kind: polymorphic
+    variants: [MeteringBillable, MeteringEvaluationCredit, MeteringMeasurement, MeteringCacheHit, MeteringSandbox]
+    note: >-
+      The metering variant is constrained against the billable flag by a oneOf on
+      AssessmentReleased -- billable true pairs only with MeteringBillable.
+    relationships:
+      - belongs_to: Assessment
+        via: metering
+
+  - name: WebhookEndpoint
+    root: true
+    schema: WebhookEndpoint
+    identity: endpoint_id
+    key_fields: [endpoint_id, url, description, events, environment, status, created_at, last_success_at, disabled_at, disabled_reason]
+    states: [enabled, disabled]
+    scoped_by: account + environment
+    relationships:
+      - has_many: WebhookDelivery
+        via: endpoint_id
+      - has_one: WebhookDisabledNotice
+        via: disabled_notice
+        optional: true
+
+  - name: WebhookDelivery
+    schema: WebhookDelivery
+    identity: delivery_id
+    key_fields: [delivery_id, endpoint_id, assessment_id, event, state, created_at, completed_at, next_attempt_at, attempt_count, redelivery_of, billable]
+    states: [pending, delivered, failed, cancelled]
+    relationships:
+      - belongs_to: WebhookEndpoint
+        via: endpoint_id
+      - belongs_to: Assessment
+        via: assessment_id
+      - has_many: WebhookDeliveryAttempt
+        via: attempts
+      - has_one: WebhookDelivery
+        via: redelivery_of
+        kind: self-reference
+        note: A manual redelivery points back at the original group; the original is never rewritten.
+
+  - name: WebhookDeliveryAttempt
+    schema: WebhookDeliveryAttempt
+    max_per_group: 5
+    relationships:
+      - belongs_to: WebhookDelivery
+        via: attempts
+
+  - name: ResolutionUsageEvent
+    root: true
+    schema: ResolutionUsageEvent
+    identity: event_id
+    key_fields: [event_id, assessment_id, market_id, released_at, assessment_version, billing_disposition, original_quantity, adjustment_quantity, effective_quantity]
+    dispositions: [billable, evaluation_credit, measurement]
+    ledger_semantics: >-
+      original_quantity is always 1; adjustment_quantity is -1 or 0; effective_quantity is the
+      resulting 0 or 1. This is how a released assessment is credited back without being deleted.
+    relationships:
+      - belongs_to: Assessment
+        via: assessment_id
+      - belongs_to: ResolutionUsageEventsPage
+        via: data
+
+relationship_summary:
+  - from: Assessment
+    to: Market
+    kind: has_one
+    via: market
+  - from: Assessment
+    to: Metering
+    kind: has_one
+    via: metering
+  - from: WebhookDelivery
+    to: Assessment
+    kind: belongs_to
+    via: assessment_id
+  - from: WebhookDelivery
+    to: WebhookEndpoint
+    kind: belongs_to
+    via: endpoint_id
+  - from: ResolutionUsageEvent
+    to: Assessment
+    kind: belongs_to
+    via: assessment_id
+  - from: WebhookDelivery
+    to: WebhookDelivery
+    kind: self_reference
+    via: redelivery_of

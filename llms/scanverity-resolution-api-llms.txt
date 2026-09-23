@@ -1,0 +1,46 @@
+# Scanverity Intelligence
+
+> Independent Polymarket intelligence for market rules, resolution sources, evidence, liquidity, risk and monitoring. Scanverity shows the source, freshness and evidence status of every result. It is not affiliated with or endorsed by Polymarket.
+
+Polymarket is the currently supported prediction-market data source. Findings use the published epistemic labels Observed fact, Deterministic finding, Historical association, Modelled and Unknown; each is timestamped and carries stated limitations. Read-only research: no order execution, no custody, no trading advice.
+
+## Product
+
+- [Scanverity Polymarket intelligence](https://scanverity.com/en/): live product entry point, current evidence modules and all seven verification products
+- [Explore Polymarket markets](https://scanverity.com/en/explore): official public market, event and trader discovery with freshness evidence
+- [Market directory](https://scanverity.com/en/markets): the attested active market universe, listed by identity, category, status and deadline
+- [Event directory](https://scanverity.com/en/events): the same attested universe grouped as events, with the markets under each
+- [Trader intelligence](https://scanverity.com/en/traders): official public leaderboard observations and source-backed trader detail
+- [Analyze a Polymarket market free](https://scanverity.com/en/try): one market, no signup
+- [About Scanverity](https://scanverity.com/about): operator, independence, contact
+
+## Seven verification products
+
+- [Resolution Watch](https://scanverity.com/en/risk): rule language, resolution sources, ambiguity and calibrated resolution risk
+- [Market Truth](https://scanverity.com/en/execution): current probability, bid/ask, order-book depth and evidence-bound execution conditions
+- [Event Map](https://scanverity.com/en/events): related markets, shared dependencies, deadlines and negative-risk relationships
+- [Smart Flow](https://scanverity.com/en/traders): source-backed wallet and cohort observations with explicit coverage limits
+- [Shock Feed](https://scanverity.com/en/explore): material market changes separated from ordinary price movement
+- [Executable Basket](https://scanverity.com/en/execution): whether an apparent opportunity survives spread, depth, slippage and fees
+- [Daily Brief](https://scanverity.com/en/monitoring-overview): monitored-market changes summarized with evidence and timestamps
+
+## Guides
+
+- [Polymarket intelligence](https://scanverity.com/polymarket-intelligence): resolution and execution research explained
+- [Polymarket resolution rules](https://scanverity.com/polymarket-resolution-rules): how markets actually settle, title-versus-rules risk, dispute mechanics
+- [Polymarket order book and liquidity](https://scanverity.com/polymarket-order-book-liquidity): displayed price versus executable price, spread, depth, partial fills
+- [Polymarket glossary](https://scanverity.com/polymarket-glossary): resolution and order-book terms defined
+- [Prediction-market vendor due diligence](https://scanverity.com/prediction-market-data-vendor-due-diligence): institutional buyer checklist for resolution evidence, order-book verification, provenance and commercial terms
+
+## Method and evidence
+
+- [Methodology](https://scanverity.com/en/methodology): evidence classes, sources, limits
+- [Coverage](https://scanverity.com/en/coverage): which markets are tracked and how deeply
+- [Track record](https://scanverity.com/en/receipts): out-of-sample grading of the resolution-risk model
+- [Public research notes](https://scanverity.com/research): timestamped, sanitized worked examples from real markets
+
+## Machine-readable discovery
+
+- [XML sitemap](https://scanverity.com/sitemap.xml): canonical public URLs and localized alternates
+- [Research RSS feed](https://scanverity.com/feed.xml): new timestamped public research notes
+- [Crawler policy](https://scanverity.com/robots.txt): public discovery and private-route boundaries
