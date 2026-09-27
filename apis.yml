@@ -44,7 +44,6 @@ apis:
   name: Scanverity Resolution API Resolution assessments API
   description: Create and poll account-scoped assessment resources.
   humanURL: https://scanverity.com/resolution-api/docs
-  baseURL: https://scanverity.com
   tags:
   - Resolution assessments
   properties:
@@ -91,7 +90,6 @@ apis:
   description: >-
     Read account-scoped monthly reconciled usage totals and their cursor-paginated evidence events.
   humanURL: https://scanverity.com/resolution-api/docs
-  baseURL: https://scanverity.com
   tags:
   - Resolution usage
   properties:
@@ -139,7 +137,6 @@ apis:
     Register account- and environment-scoped signed endpoints, inspect append-only delivery evidence and
     request non-billable redelivery.
   humanURL: https://scanverity.com/resolution-api/docs
-  baseURL: https://scanverity.com
   tags:
   - Webhook Endpoints
   tags_raw:

@@ -188,85 +188,18 @@ paths:
           $ref: '#/components/responses/InternalError'
 components:
   schemas:
-    Provenance:
+    MeteringMeasurement:
       type: object
       additionalProperties: false
       required:
-      - record_schema
-      - limitations
+      - disposition
+      - usage_event_id
       properties:
-        record_schema:
+        disposition:
+          const: measurement
+        usage_event_id:
           type: string
-        model_version:
-          type: string
-        limitations:
-          type: array
-          maxItems: 20
-          items:
-            type: string
-        evidence_freshness:
-          $ref: '#/components/schemas/EvidenceFreshness'
-    AssessmentWithheld:
-      allOf:
-      - $ref: '#/components/schemas/AssessmentCommon'
-      - type: object
-        required:
-        - withheld
-        properties:
-          status:
-            const: withheld
-          billable:
-            const: false
-          withheld:
-            $ref: '#/components/schemas/WithheldDetail'
-          receipt:
-            description: Present only when a public receipt was successfully published for a live withheld assessment. Omitted for sandbox assessments and whenever no receipt was published.
-            allOf:
-            - $ref: '#/components/schemas/ReceiptReference'
-    VerifiedFact:
-      type: object
-      additionalProperties: false
-      required:
-      - kind
-      - statement
-      - as_of
-      properties:
-        kind:
-          type: string
-        statement:
-          type: string
-        as_of:
-          type: string
-          format: date-time
-    UnitInterval:
-      type: number
-      minimum: 0
-      maximum: 1
-    AssessmentFailed:
-      allOf:
-      - $ref: '#/components/schemas/AssessmentCommon'
-      - type: object
-        required:
-        - error
-        properties:
-          status:
-            const: failed
-          billable:
-            const: false
-          error:
-            $ref: '#/components/schemas/TerminalError'
-    ReceiptReference:
-      type: object
-      additionalProperties: false
-      required:
-      - receipt_id
-      - url
-      properties:
-        receipt_id:
-          type: string
-        url:
-          type: string
-          format: uri
+          minLength: 1
     PollingGuidance:
       type: object
       additionalProperties: false
@@ -285,140 +218,6 @@ components:
           description: Indicative behavior, not a completion guarantee or service-level commitment.
           examples:
           - 10
-    MeteringBillable:
-      type: object
-      additionalProperties: false
-      required:
-      - disposition
-      - usage_event_id
-      properties:
-        disposition:
-          const: billable
-        usage_event_id:
-          type: string
-          minLength: 1
-    Market:
-      type: object
-      additionalProperties: false
-      required:
-      - market_id
-      - title
-      - condition_id
-      - slug
-      properties:
-        market_id:
-          type: string
-        title:
-          type: string
-        condition_id:
-          type:
-          - string
-          - 'null'
-          pattern: ^0x[a-f0-9]{64}$
-        slug:
-          type:
-          - string
-          - 'null'
-        canonical_url:
-          type: string
-          format: uri
-    Metering:
-      oneOf:
-      - $ref: '#/components/schemas/MeteringBillable'
-      - $ref: '#/components/schemas/MeteringEvaluationCredit'
-      - $ref: '#/components/schemas/MeteringMeasurement'
-      - $ref: '#/components/schemas/MeteringCacheHit'
-      - $ref: '#/components/schemas/MeteringSandbox'
-    ErrorResponse:
-      type: object
-      additionalProperties: false
-      required:
-      - error
-      properties:
-        error:
-          type: object
-          additionalProperties: false
-          required:
-          - code
-          - message
-          properties:
-            code:
-              type: string
-              enum:
-              - INVALID_REQUEST
-              - INVALID_MARKET
-              - UNSUPPORTED_MARKET
-              - INVALID_IDEMPOTENCY_KEY
-              - IDEMPOTENCY_CONFLICT
-              - WEBHOOK_NOT_CONFIGURED
-              - INSUFFICIENT_SCOPE
-              - INVALID_TOKEN
-              - RATE_LIMITED
-              - NOT_FOUND
-              - METHOD_NOT_ALLOWED
-              - PROVIDER_UNAVAILABLE
-              - INTERNAL_ERROR
-            message:
-              type: string
-            detail:
-              type: string
-              maxLength: 500
-            docs_url:
-              type: string
-              format: uri
-    TerminalError:
-      type: object
-      additionalProperties: false
-      required:
-      - code
-      properties:
-        code:
-          type: string
-          x-extensible-enum:
-          - ASSESSMENT_FAILED
-          - PROVIDER_UNAVAILABLE
-          - INTERNAL_ERROR
-        detail:
-          type: string
-        retryable:
-          type: boolean
-    MeteringSandbox:
-      type: object
-      additionalProperties: false
-      required:
-      - disposition
-      properties:
-        disposition:
-          const: sandbox
-    MeteringEvaluationCredit:
-      type: object
-      additionalProperties: false
-      required:
-      - disposition
-      - usage_event_id
-      properties:
-        disposition:
-          const: evaluation_credit
-        usage_event_id:
-          type: string
-          minLength: 1
-    Assessment:
-      oneOf:
-      - $ref: '#/components/schemas/AssessmentAccepted'
-      - $ref: '#/components/schemas/AssessmentProcessing'
-      - $ref: '#/components/schemas/AssessmentReleased'
-      - $ref: '#/components/schemas/AssessmentWithheld'
-      - $ref: '#/components/schemas/AssessmentFailed'
-      discriminator:
-        propertyName: status
-    MeteringCacheHit:
-      type: object
-      additionalProperties: false
-      required:
-      - disposition
-      properties:
-        disposition:
-          const: cache_hit
     ResolutionRisk:
       type: object
       additionalProperties: false
@@ -439,71 +238,25 @@ components:
           - $ref: '#/components/schemas/Calibration'
           - type: 'null'
           description: A measured null remains null. If the upstream record did not contain this key, it is omitted.
-    ModelledRisk:
-      type: object
-      additionalProperties: false
-      minProperties: 1
-      properties:
-        dispute_probability:
-          $ref: '#/components/schemas/UnitInterval'
-        ambiguity_score:
-          $ref: '#/components/schemas/UnitInterval'
-        source_reliability_score:
-          $ref: '#/components/schemas/UnitInterval'
-        timezone_risk:
-          $ref: '#/components/schemas/UnitInterval'
-        cancellation_risk:
-          $ref: '#/components/schemas/UnitInterval'
-    Calibration:
-      type: object
-      additionalProperties: true
-      properties:
-        p_cal:
-          type: number
-        ci_low:
-          type: number
-        ci_high:
-          type: number
-        bucket_n:
-          type: number
-        reliability:
-          type: number
-        base_rate:
-          type: number
-        model_version:
-          type: string
-    RulesSnapshot:
+    Metering:
+      oneOf:
+      - $ref: '#/components/schemas/MeteringBillable'
+      - $ref: '#/components/schemas/MeteringEvaluationCredit'
+      - $ref: '#/components/schemas/MeteringMeasurement'
+      - $ref: '#/components/schemas/MeteringCacheHit'
+      - $ref: '#/components/schemas/MeteringSandbox'
+    MeteringEvaluationCredit:
       type: object
       additionalProperties: false
       required:
-      - sha256
-      - captured_at
+      - disposition
+      - usage_event_id
       properties:
-        sha256:
+        disposition:
+          const: evaluation_credit
+        usage_event_id:
           type: string
-          pattern: ^[a-f0-9]{64}$
-        captured_at:
-          type: string
-          format: date-time
-    EvidenceFreshness:
-      type: object
-      additionalProperties: false
-      properties:
-        rules_as_of:
-          type:
-          - string
-          - 'null'
-          format: date-time
-        book_as_of:
-          type:
-          - string
-          - 'null'
-          format: date-time
-        universe_as_of:
-          type:
-          - string
-          - 'null'
-          format: date-time
+          minLength: 1
     AssessmentProcessing:
       allOf:
       - $ref: '#/components/schemas/AssessmentCommon'
@@ -543,93 +296,53 @@ components:
         customer_reference:
           type: string
           maxLength: 200
-    CriticalDate:
-      type: object
-      additionalProperties: false
-      properties:
-        date:
-          type: string
-          format: date-time
-        kind:
-          type: string
-        note:
-          type: string
-    MeteringMeasurement:
+    Provenance:
       type: object
       additionalProperties: false
       required:
-      - disposition
-      - usage_event_id
+      - record_schema
+      - limitations
       properties:
-        disposition:
-          const: measurement
-        usage_event_id:
+        record_schema:
           type: string
-          minLength: 1
-    WithheldDetail:
-      type: object
-      additionalProperties: false
-      required:
-      - code
-      - could_not_verify
-      - reason
-      properties:
-        code:
+        model_version:
           type: string
-          x-extensible-enum:
-          - WITHHELD_NO_RULES_TEXT
-          - WITHHELD_NO_FINITE_ESTIMATE
-          - WITHHELD_SOURCE_UNVERIFIED
-        could_not_verify:
-          type: string
-        reason:
-          type: string
-        verified_facts:
+        limitations:
           type: array
-          items: {}
-        retry:
-          type: object
-          additionalProperties: false
-          properties:
-            policy:
-              type: string
-        evidence_reference:
-          type: string
-    EvidenceSnapshot:
+          maxItems: 20
+          items:
+            type: string
+        evidence_freshness:
+          $ref: '#/components/schemas/EvidenceFreshness'
+    AssessmentAccepted:
+      allOf:
+      - $ref: '#/components/schemas/AssessmentCommon'
+      - type: object
+        required:
+        - status_url
+        - polling
+        properties:
+          status:
+            const: accepted
+          billable:
+            const: false
+          status_url:
+            type: string
+            format: uri
+          polling:
+            $ref: '#/components/schemas/PollingGuidance'
+    ReceiptReference:
       type: object
       additionalProperties: false
       required:
-      - sha256
-      - book_as_of
-      - universe_as_of
+      - receipt_id
+      - url
       properties:
-        sha256:
+        receipt_id:
           type: string
-          pattern: ^[a-f0-9]{64}$
-        book_as_of:
+        url:
           type: string
-          format: date-time
-        universe_as_of:
-          type: string
-          format: date-time
-    CreateAssessmentRequest:
-      type: object
-      additionalProperties: false
-      required:
-      - market
-      properties:
-        market:
-          type: string
-          minLength: 1
-          description: Stable Polymarket market identifier, supported slug, or supported canonical URL. It is normalized to one internal market identifier.
-        customer_reference:
-          type: string
-          maxLength: 200
-          description: Opaque customer correlation value. It is echoed and never interpreted.
-        webhook:
-          type: boolean
-          default: false
-          description: When true, enqueue the terminal assessment for every active endpoint in the same account and token environment that subscribes to the terminal event. If no active endpoint exists, the request returns WEBHOOK_NOT_CONFIGURED. Inline URLs are never accepted. Polling remains available independently.
+          format: uri
     AssessmentReleased:
       allOf:
       - $ref: '#/components/schemas/AssessmentCommon'
@@ -696,28 +409,63 @@ components:
           not:
             required:
             - receipt
-    AssessmentId:
-      type: string
-      pattern: ^ra_[a-f0-9]{32}$
-      examples:
-      - ra_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-    AssessmentAccepted:
-      allOf:
-      - $ref: '#/components/schemas/AssessmentCommon'
-      - type: object
-        required:
-        - status_url
-        - polling
-        properties:
-          status:
-            const: accepted
-          billable:
-            const: false
-          status_url:
-            type: string
-            format: uri
-          polling:
-            $ref: '#/components/schemas/PollingGuidance'
+    MeteringBillable:
+      type: object
+      additionalProperties: false
+      required:
+      - disposition
+      - usage_event_id
+      properties:
+        disposition:
+          const: billable
+        usage_event_id:
+          type: string
+          minLength: 1
+    MeteringCacheHit:
+      type: object
+      additionalProperties: false
+      required:
+      - disposition
+      properties:
+        disposition:
+          const: cache_hit
+    EvidenceFreshness:
+      type: object
+      additionalProperties: false
+      properties:
+        rules_as_of:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        book_as_of:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        universe_as_of:
+          type:
+          - string
+          - 'null'
+          format: date-time
+    CreateAssessmentRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - market
+      properties:
+        market:
+          type: string
+          minLength: 1
+          description: Stable Polymarket market identifier, supported slug, or supported canonical URL. It is normalized to one internal market identifier.
+        customer_reference:
+          type: string
+          maxLength: 200
+          description: Opaque customer correlation value. It is echoed and never interpreted.
+        webhook:
+          type: boolean
+          default: false
+          description: When true, enqueue the terminal assessment for every active endpoint in the same account and token environment that subscribes to the terminal event. If no active endpoint exists, the request returns WEBHOOK_NOT_CONFIGURED. Inline URLs are never accepted. Polling remains available independently.
     RiskFactors:
       type: object
       additionalProperties: false
@@ -748,151 +496,259 @@ components:
           maxItems: 20
           items:
             $ref: '#/components/schemas/CriticalDate'
-  responses:
-    InsufficientScope:
-      description: The credential is valid but lacks the operation's scope.
-      headers:
-        RateLimit-Limit:
-          $ref: '#/components/headers/RateLimit-Limit'
-        RateLimit-Remaining:
-          $ref: '#/components/headers/RateLimit-Remaining'
-        RateLimit-Reset:
-          $ref: '#/components/headers/RateLimit-Reset'
-        RateLimit-Scope:
-          $ref: '#/components/headers/RateLimit-Scope'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-          example:
-            error:
-              code: INSUFFICIENT_SCOPE
-              message: This token lacks the required scope.
-              detail: This token lacks the 'resolution:request' scope.
-    BadRequest:
-      description: INVALID_REQUEST, INVALID_MARKET, INVALID_IDEMPOTENCY_KEY, or a token supplied in the URL.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    RateLimited:
-      description: The current shared per-token or per-account traffic bound was reached. Rate limiting is not purchased usage.
-      headers:
-        Retry-After:
-          $ref: '#/components/headers/Retry-After'
-        RateLimit-Limit:
-          $ref: '#/components/headers/RateLimit-Limit'
-        RateLimit-Remaining:
-          $ref: '#/components/headers/RateLimit-Remaining'
-        RateLimit-Reset:
-          $ref: '#/components/headers/RateLimit-Reset'
-        RateLimit-Scope:
-          $ref: '#/components/headers/RateLimit-Scope'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-          example:
-            error:
-              code: RATE_LIMITED
-              message: Too many requests — slow down and retry.
-    InvalidToken:
-      description: Unknown, malformed, expired or revoked token. These cases are deliberately indistinguishable.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-          example:
-            error:
-              code: INVALID_TOKEN
-              message: The bearer token is invalid, expired or revoked.
-    InternalError:
-      description: The request could not be completed safely. No assessment is released and the request is not billable.
-      headers:
-        RateLimit-Limit:
-          $ref: '#/components/headers/RateLimit-Limit'
-        RateLimit-Remaining:
-          $ref: '#/components/headers/RateLimit-Remaining'
-        RateLimit-Reset:
-          $ref: '#/components/headers/RateLimit-Reset'
-        RateLimit-Scope:
-          $ref: '#/components/headers/RateLimit-Scope'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-          example:
-            error:
-              code: INTERNAL_ERROR
-              message: The request could not be completed safely.
-    ProviderUnavailable:
-      description: The live market resolver/provider is temporarily unavailable. No assessment is released and the request is not billable. Deterministic sandbox requests do not use this request-level fallback; the sv-sandbox-failed fixture produces a readable terminal failed resource.
-      headers:
-        RateLimit-Limit:
-          $ref: '#/components/headers/RateLimit-Limit'
-        RateLimit-Remaining:
-          $ref: '#/components/headers/RateLimit-Remaining'
-        RateLimit-Reset:
-          $ref: '#/components/headers/RateLimit-Reset'
-        RateLimit-Scope:
-          $ref: '#/components/headers/RateLimit-Scope'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-          example:
-            error:
-              code: PROVIDER_UNAVAILABLE
-              message: The assessment provider is temporarily unavailable.
-  headers:
-    RateLimit-Scope:
-      description: The read or request bucket consumed by this authenticated operation.
-      x-availability: IMPLEMENTED_FEATURE_GATED
-      schema:
-        type: string
-        enum:
-        - read
-        - request
-    RateLimit-Limit:
-      description: Maximum requests in the token's current 60-second read or request bucket.
-      x-availability: IMPLEMENTED_FEATURE_GATED
-      schema:
-        type: integer
-        minimum: 0
-    Retry-After:
-      description: Whole seconds to wait before retrying. Implemented on 429 responses.
-      schema:
-        type: integer
-        minimum: 1
-    RateLimit-Reset:
-      description: Whole seconds until the current token and class window resets.
-      x-availability: IMPLEMENTED_FEATURE_GATED
-      schema:
-        type: integer
-        minimum: 0
-    RateLimit-Remaining:
-      description: Requests remaining in the current token and class bucket.
-      x-availability: IMPLEMENTED_FEATURE_GATED
-      schema:
-        type: integer
-        minimum: 0
-    Idempotent-Replayed:
-      description: Present with value true only when POST returned an existing idempotency-bound resource.
-      schema:
-        type: string
-        const: 'true'
-  examples:
-    FailedAssessment:
-      value:
-        assessment_id: ra_dddddddddddddddddddddddddddddddd
-        market_id: '1105752'
-        status: failed
-        created_at: '2026-08-03T16:15:00.000Z'
-        billable: false
+    AssessmentWithheld:
+      allOf:
+      - $ref: '#/components/schemas/AssessmentCommon'
+      - type: object
+        required:
+        - withheld
+        properties:
+          status:
+            const: withheld
+          billable:
+            const: false
+          withheld:
+            $ref: '#/components/schemas/WithheldDetail'
+          receipt:
+            description: Present only when a public receipt was successfully published for a live withheld assessment. Omitted for sandbox assessments and whenever no receipt was published.
+            allOf:
+            - $ref: '#/components/schemas/ReceiptReference'
+    Calibration:
+      type: object
+      additionalProperties: true
+      properties:
+        p_cal:
+          type: number
+        ci_low:
+          type: number
+        ci_high:
+          type: number
+        bucket_n:
+          type: number
+        reliability:
+          type: number
+        base_rate:
+          type: number
+        model_version:
+          type: string
+    Assessment:
+      oneOf:
+      - $ref: '#/components/schemas/AssessmentAccepted'
+      - $ref: '#/components/schemas/AssessmentProcessing'
+      - $ref: '#/components/schemas/AssessmentReleased'
+      - $ref: '#/components/schemas/AssessmentWithheld'
+      - $ref: '#/components/schemas/AssessmentFailed'
+      discriminator:
+        propertyName: status
+    UnitInterval:
+      type: number
+      minimum: 0
+      maximum: 1
+    WithheldDetail:
+      type: object
+      additionalProperties: false
+      required:
+      - code
+      - could_not_verify
+      - reason
+      properties:
+        code:
+          type: string
+          x-extensible-enum:
+          - WITHHELD_NO_RULES_TEXT
+          - WITHHELD_NO_FINITE_ESTIMATE
+          - WITHHELD_SOURCE_UNVERIFIED
+        could_not_verify:
+          type: string
+        reason:
+          type: string
+        verified_facts:
+          type: array
+          items: {}
+        retry:
+          type: object
+          additionalProperties: false
+          properties:
+            policy:
+              type: string
+        evidence_reference:
+          type: string
+    RulesSnapshot:
+      type: object
+      additionalProperties: false
+      required:
+      - sha256
+      - captured_at
+      properties:
+        sha256:
+          type: string
+          pattern: ^[a-f0-9]{64}$
+        captured_at:
+          type: string
+          format: date-time
+    EvidenceSnapshot:
+      type: object
+      additionalProperties: false
+      required:
+      - sha256
+      - book_as_of
+      - universe_as_of
+      properties:
+        sha256:
+          type: string
+          pattern: ^[a-f0-9]{64}$
+        book_as_of:
+          type: string
+          format: date-time
+        universe_as_of:
+          type: string
+          format: date-time
+    Market:
+      type: object
+      additionalProperties: false
+      required:
+      - market_id
+      - title
+      - condition_id
+      - slug
+      properties:
+        market_id:
+          type: string
+        title:
+          type: string
+        condition_id:
+          type:
+          - string
+          - 'null'
+          pattern: ^0x[a-f0-9]{64}$
+        slug:
+          type:
+          - string
+          - 'null'
+        canonical_url:
+          type: string
+          format: uri
+    ModelledRisk:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        dispute_probability:
+          $ref: '#/components/schemas/UnitInterval'
+        ambiguity_score:
+          $ref: '#/components/schemas/UnitInterval'
+        source_reliability_score:
+          $ref: '#/components/schemas/UnitInterval'
+        timezone_risk:
+          $ref: '#/components/schemas/UnitInterval'
+        cancellation_risk:
+          $ref: '#/components/schemas/UnitInterval'
+    MeteringSandbox:
+      type: object
+      additionalProperties: false
+      required:
+      - disposition
+      properties:
+        disposition:
+          const: sandbox
+    VerifiedFact:
+      type: object
+      additionalProperties: false
+      required:
+      - kind
+      - statement
+      - as_of
+      properties:
+        kind:
+          type: string
+        statement:
+          type: string
+        as_of:
+          type: string
+          format: date-time
+    CriticalDate:
+      type: object
+      additionalProperties: false
+      properties:
+        date:
+          type: string
+          format: date-time
+        kind:
+          type: string
+        note:
+          type: string
+    AssessmentId:
+      type: string
+      pattern: ^ra_[a-f0-9]{32}$
+      examples:
+      - ra_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    AssessmentFailed:
+      allOf:
+      - $ref: '#/components/schemas/AssessmentCommon'
+      - type: object
+        required:
+        - error
+        properties:
+          status:
+            const: failed
+          billable:
+            const: false
+          error:
+            $ref: '#/components/schemas/TerminalError'
+    TerminalError:
+      type: object
+      additionalProperties: false
+      required:
+      - code
+      properties:
+        code:
+          type: string
+          x-extensible-enum:
+          - ASSESSMENT_FAILED
+          - PROVIDER_UNAVAILABLE
+          - INTERNAL_ERROR
+        detail:
+          type: string
+        retryable:
+          type: boolean
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - error
+      properties:
         error:
-          code: PROVIDER_UNAVAILABLE
-          detail: The assessment provider was temporarily unavailable.
-          retryable: true
+          type: object
+          additionalProperties: false
+          required:
+          - code
+          - message
+          properties:
+            code:
+              type: string
+              enum:
+              - INVALID_REQUEST
+              - INVALID_MARKET
+              - UNSUPPORTED_MARKET
+              - INVALID_IDEMPOTENCY_KEY
+              - IDEMPOTENCY_CONFLICT
+              - WEBHOOK_NOT_CONFIGURED
+              - INSUFFICIENT_SCOPE
+              - INVALID_TOKEN
+              - RATE_LIMITED
+              - NOT_FOUND
+              - METHOD_NOT_ALLOWED
+              - PROVIDER_UNAVAILABLE
+              - INTERNAL_ERROR
+            message:
+              type: string
+            detail:
+              type: string
+              maxLength: 500
+            docs_url:
+              type: string
+              format: uri
+  examples:
     ReleasedCacheHitAssessment:
       value:
         assessment_id: ra_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
@@ -918,26 +774,32 @@ components:
           limitations: []
         metering:
           disposition: cache_hit
-    ReleasedEvaluationCreditAssessment:
+    AcceptedAssessment:
       value:
-        assessment_id: ra_11111111111111111111111111111111
+        assessment_id: ra_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        market_id: '1105752'
+        status: accepted
+        created_at: '2026-08-03T16:00:00.000Z'
+        billable: false
+        customer_reference: case-2026-08-03
+        status_url: https://scanverity.com/v1/resolution-assessments/ra_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        polling:
+          recommended_interval_seconds: 3
+          typical_completion_seconds: 10
+    ReleasedBillableAssessment:
+      value:
+        assessment_id: ra_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
         market_id: '1105752'
         status: released
-        created_at: '2026-08-03T16:02:00.000Z'
-        billable: false
-        assessed_at: '2026-08-03T16:02:08.000Z'
+        created_at: '2026-08-03T16:00:00.000Z'
+        billable: true
+        customer_reference: case-2026-08-03
+        assessed_at: '2026-08-03T16:00:08.000Z'
         market:
           market_id: '1105752'
           title: Will the example market resolve?
           condition_id: null
           slug: example-market
-        rules_snapshot:
-          sha256: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-          captured_at: '2026-08-03T16:01:30.000Z'
-        evidence_snapshot:
-          sha256: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
-          book_as_of: '2026-08-03T16:01:45.000Z'
-          universe_as_of: '2026-08-03T16:01:45.000Z'
         resolution_risk:
           classification: ELEVATED_RESOLUTION_RISK
           risk_basis: CALIBRATED
@@ -945,6 +807,10 @@ components:
           modelled:
             dispute_probability: 0.31
             ambiguity_score: 0.62
+          calibrated_estimate:
+            p_cal: 0.27
+            bucket_n: 30
+            model_version: rr2-v1
         risk_factors:
           principal_reason_codes:
           - AMBIGUOUS_DEADLINE
@@ -956,18 +822,14 @@ components:
         provenance:
           record_schema: watch-record-v2
           model_version: rr2-v1
-          limitations: []
+          limitations:
+          - The source carries no explicit publication schedule.
+          evidence_freshness:
+            rules_as_of: '2026-08-03T15:59:30.000Z'
+            book_as_of: null
         metering:
-          disposition: evaluation_credit
-          usage_event_id: usage-evaluation-credit-example
-    ProcessingAssessment:
-      value:
-        assessment_id: ra_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-        market_id: '1105752'
-        status: processing
-        created_at: '2026-08-03T16:00:00.000Z'
-        billable: false
-        customer_reference: case-2026-08-03
+          disposition: billable
+          usage_event_id: usage-correlation-example
     SandboxReleasedAssessment:
       value:
         assessed_at: '2026-08-03T00:00:00.000Z'
@@ -1029,18 +891,17 @@ components:
         status: released
         created_at: '2026-08-03T19:00:00.000Z'
         billable: false
-    AcceptedAssessment:
+    FailedAssessment:
       value:
-        assessment_id: ra_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        assessment_id: ra_dddddddddddddddddddddddddddddddd
         market_id: '1105752'
-        status: accepted
-        created_at: '2026-08-03T16:00:00.000Z'
+        status: failed
+        created_at: '2026-08-03T16:15:00.000Z'
         billable: false
-        customer_reference: case-2026-08-03
-        status_url: https://scanverity.com/v1/resolution-assessments/ra_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-        polling:
-          recommended_interval_seconds: 3
-          typical_completion_seconds: 10
+        error:
+          code: PROVIDER_UNAVAILABLE
+          detail: The assessment provider was temporarily unavailable.
+          retryable: true
     ReleasedMeasurementAssessment:
       value:
         assessment_id: ra_22222222222222222222222222222222
@@ -1097,20 +958,34 @@ components:
           verified_facts: []
           retry:
             policy: retried when the blocking input changes and at the next scheduled assessment
-    ReleasedBillableAssessment:
+    ProcessingAssessment:
       value:
         assessment_id: ra_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
         market_id: '1105752'
-        status: released
+        status: processing
         created_at: '2026-08-03T16:00:00.000Z'
-        billable: true
+        billable: false
         customer_reference: case-2026-08-03
-        assessed_at: '2026-08-03T16:00:08.000Z'
+    ReleasedEvaluationCreditAssessment:
+      value:
+        assessment_id: ra_11111111111111111111111111111111
+        market_id: '1105752'
+        status: released
+        created_at: '2026-08-03T16:02:00.000Z'
+        billable: false
+        assessed_at: '2026-08-03T16:02:08.000Z'
         market:
           market_id: '1105752'
           title: Will the example market resolve?
           condition_id: null
           slug: example-market
+        rules_snapshot:
+          sha256: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+          captured_at: '2026-08-03T16:01:30.000Z'
+        evidence_snapshot:
+          sha256: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+          book_as_of: '2026-08-03T16:01:45.000Z'
+          universe_as_of: '2026-08-03T16:01:45.000Z'
         resolution_risk:
           classification: ELEVATED_RESOLUTION_RISK
           risk_basis: CALIBRATED
@@ -1118,10 +993,6 @@ components:
           modelled:
             dispute_probability: 0.31
             ambiguity_score: 0.62
-          calibrated_estimate:
-            p_cal: 0.27
-            bucket_n: 30
-            model_version: rr2-v1
         risk_factors:
           principal_reason_codes:
           - AMBIGUOUS_DEADLINE
@@ -1133,22 +1004,144 @@ components:
         provenance:
           record_schema: watch-record-v2
           model_version: rr2-v1
-          limitations:
-          - The source carries no explicit publication schedule.
-          evidence_freshness:
-            rules_as_of: '2026-08-03T15:59:30.000Z'
-            book_as_of: null
+          limitations: []
         metering:
-          disposition: billable
-          usage_event_id: usage-correlation-example
-  parameters:
-    AssessmentId:
-      name: assessment_id
-      in: path
-      required: true
-      description: Account-scoped immutable assessment identifier.
+          disposition: evaluation_credit
+          usage_event_id: usage-evaluation-credit-example
+  headers:
+    RateLimit-Scope:
+      description: The read or request bucket consumed by this authenticated operation.
+      x-availability: IMPLEMENTED_FEATURE_GATED
       schema:
-        $ref: '#/components/schemas/AssessmentId'
+        type: string
+        enum:
+        - read
+        - request
+    Idempotent-Replayed:
+      description: Present with value true only when POST returned an existing idempotency-bound resource.
+      schema:
+        type: string
+        const: 'true'
+    RateLimit-Limit:
+      description: Maximum requests in the token's current 60-second read or request bucket.
+      x-availability: IMPLEMENTED_FEATURE_GATED
+      schema:
+        type: integer
+        minimum: 0
+    Retry-After:
+      description: Whole seconds to wait before retrying. Implemented on 429 responses.
+      schema:
+        type: integer
+        minimum: 1
+    RateLimit-Reset:
+      description: Whole seconds until the current token and class window resets.
+      x-availability: IMPLEMENTED_FEATURE_GATED
+      schema:
+        type: integer
+        minimum: 0
+    RateLimit-Remaining:
+      description: Requests remaining in the current token and class bucket.
+      x-availability: IMPLEMENTED_FEATURE_GATED
+      schema:
+        type: integer
+        minimum: 0
+  responses:
+    RateLimited:
+      description: The current shared per-token or per-account traffic bound was reached. Rate limiting is not purchased usage.
+      headers:
+        Retry-After:
+          $ref: '#/components/headers/Retry-After'
+        RateLimit-Limit:
+          $ref: '#/components/headers/RateLimit-Limit'
+        RateLimit-Remaining:
+          $ref: '#/components/headers/RateLimit-Remaining'
+        RateLimit-Reset:
+          $ref: '#/components/headers/RateLimit-Reset'
+        RateLimit-Scope:
+          $ref: '#/components/headers/RateLimit-Scope'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: RATE_LIMITED
+              message: Too many requests — slow down and retry.
+    InvalidToken:
+      description: Unknown, malformed, expired or revoked token. These cases are deliberately indistinguishable.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: INVALID_TOKEN
+              message: The bearer token is invalid, expired or revoked.
+    InternalError:
+      description: The request could not be completed safely. No assessment is released and the request is not billable.
+      headers:
+        RateLimit-Limit:
+          $ref: '#/components/headers/RateLimit-Limit'
+        RateLimit-Remaining:
+          $ref: '#/components/headers/RateLimit-Remaining'
+        RateLimit-Reset:
+          $ref: '#/components/headers/RateLimit-Reset'
+        RateLimit-Scope:
+          $ref: '#/components/headers/RateLimit-Scope'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: INTERNAL_ERROR
+              message: The request could not be completed safely.
+    BadRequest:
+      description: INVALID_REQUEST, INVALID_MARKET, INVALID_IDEMPOTENCY_KEY, or a token supplied in the URL.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ProviderUnavailable:
+      description: The live market resolver/provider is temporarily unavailable. No assessment is released and the request is not billable. Deterministic sandbox requests do not use this request-level fallback; the sv-sandbox-failed fixture produces a readable terminal failed resource.
+      headers:
+        RateLimit-Limit:
+          $ref: '#/components/headers/RateLimit-Limit'
+        RateLimit-Remaining:
+          $ref: '#/components/headers/RateLimit-Remaining'
+        RateLimit-Reset:
+          $ref: '#/components/headers/RateLimit-Reset'
+        RateLimit-Scope:
+          $ref: '#/components/headers/RateLimit-Scope'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: PROVIDER_UNAVAILABLE
+              message: The assessment provider is temporarily unavailable.
+    InsufficientScope:
+      description: The credential is valid but lacks the operation's scope.
+      headers:
+        RateLimit-Limit:
+          $ref: '#/components/headers/RateLimit-Limit'
+        RateLimit-Remaining:
+          $ref: '#/components/headers/RateLimit-Remaining'
+        RateLimit-Reset:
+          $ref: '#/components/headers/RateLimit-Reset'
+        RateLimit-Scope:
+          $ref: '#/components/headers/RateLimit-Scope'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: INSUFFICIENT_SCOPE
+              message: This token lacks the required scope.
+              detail: This token lacks the 'resolution:request' scope.
+  parameters:
     IdempotencyKey:
       name: Idempotency-Key
       in: header
@@ -1159,6 +1152,13 @@ components:
         minLength: 1
         maxLength: 255
         pattern: ^[\u0020-\u007E]+$
+    AssessmentId:
+      name: assessment_id
+      in: path
+      required: true
+      description: Account-scoped immutable assessment identifier.
+      schema:
+        $ref: '#/components/schemas/AssessmentId'
   securitySchemes:
     bearerToken:
       type: http

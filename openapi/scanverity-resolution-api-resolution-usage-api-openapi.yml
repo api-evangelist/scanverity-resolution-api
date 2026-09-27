@@ -102,28 +102,229 @@ paths:
         '503':
           $ref: '#/components/responses/ResolutionUsageUnavailable'
 components:
+  responses:
+    ResolutionUsageUnavailable:
+      description: The reconciled usage view could not be read safely or failed its integrity/parity checks. No partial usage data is returned.
+      headers:
+        RateLimit-Limit:
+          $ref: '#/components/headers/RateLimit-Limit'
+        RateLimit-Remaining:
+          $ref: '#/components/headers/RateLimit-Remaining'
+        RateLimit-Reset:
+          $ref: '#/components/headers/RateLimit-Reset'
+        RateLimit-Scope:
+          $ref: '#/components/headers/RateLimit-Scope'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ResolutionUsageProblemResponse'
+          examples:
+            integrityFailure:
+              value:
+                error:
+                  code: USAGE_INTEGRITY_FAILED
+                  message: Resolution usage is temporarily unavailable.
+            unavailable:
+              value:
+                error:
+                  code: USAGE_UNAVAILABLE
+                  message: Resolution usage is temporarily unavailable.
+    RateLimited:
+      description: The current shared per-token or per-account traffic bound was reached. Rate limiting is not purchased usage.
+      headers:
+        Retry-After:
+          $ref: '#/components/headers/Retry-After'
+        RateLimit-Limit:
+          $ref: '#/components/headers/RateLimit-Limit'
+        RateLimit-Remaining:
+          $ref: '#/components/headers/RateLimit-Remaining'
+        RateLimit-Reset:
+          $ref: '#/components/headers/RateLimit-Reset'
+        RateLimit-Scope:
+          $ref: '#/components/headers/RateLimit-Scope'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: RATE_LIMITED
+              message: Too many requests — slow down and retry.
+    InvalidToken:
+      description: Unknown, malformed, expired or revoked token. These cases are deliberately indistinguishable.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: INVALID_TOKEN
+              message: The bearer token is invalid, expired or revoked.
+    ResolutionUsageForbidden:
+      description: The credential is valid but is not a live token carrying usage:read.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: INSUFFICIENT_SCOPE
+              message: A live token with usage:read is required.
+    ResolutionUsageBadRequest:
+      description: The query is invalid, the required events period is absent, the cursor is invalid for this account and period, or a token was supplied in the URL.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: INVALID_TOKEN
+              message: Send the token in the Authorization header, never the URL.
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ResolutionUsageProblemResponse'
+          examples:
+            invalidQuery:
+              value:
+                error:
+                  code: INVALID_USAGE_QUERY
+                  message: period must use YYYY-MM.
+            invalidCursor:
+              value:
+                error:
+                  code: INVALID_USAGE_CURSOR
+                  message: The usage cursor is invalid for this account and month.
+  parameters:
+    UsageCursor:
+      name: cursor
+      in: query
+      required: false
+      description: Opaque cursor returned by the preceding page for the same authenticated account and period.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 500
+        pattern: ^[A-Za-z0-9_-]+$
+    UsagePeriodOptional:
+      name: period
+      in: query
+      required: false
+      description: UTC calendar month in YYYY-MM form. Defaults to the current UTC month on the summary route.
+      schema:
+        type: string
+        pattern: ^\d{4}-(?:0[1-9]|1[0-2])$
+        examples:
+        - 2026-08
+    UsageLimit:
+      name: limit
+      in: query
+      required: false
+      description: Maximum number of usage events returned in one page.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 50
+    UsagePeriodRequired:
+      name: period
+      in: query
+      required: true
+      description: Required UTC calendar month in YYYY-MM form.
+      schema:
+        type: string
+        pattern: ^\d{4}-(?:0[1-9]|1[0-2])$
+        examples:
+        - 2026-08
+  headers:
+    RateLimit-Scope:
+      description: The read or request bucket consumed by this authenticated operation.
+      x-availability: IMPLEMENTED_FEATURE_GATED
+      schema:
+        type: string
+        enum:
+        - read
+        - request
+    RateLimit-Limit:
+      description: Maximum requests in the token's current 60-second read or request bucket.
+      x-availability: IMPLEMENTED_FEATURE_GATED
+      schema:
+        type: integer
+        minimum: 0
+    Retry-After:
+      description: Whole seconds to wait before retrying. Implemented on 429 responses.
+      schema:
+        type: integer
+        minimum: 1
+    RateLimit-Reset:
+      description: Whole seconds until the current token and class window resets.
+      x-availability: IMPLEMENTED_FEATURE_GATED
+      schema:
+        type: integer
+        minimum: 0
+    RateLimit-Remaining:
+      description: Requests remaining in the current token and class bucket.
+      x-availability: IMPLEMENTED_FEATURE_GATED
+      schema:
+        type: integer
+        minimum: 0
   schemas:
-    ResolutionUsageSummary:
+    ResolutionUsageEventsPage:
       type: object
       additionalProperties: false
       required:
       - object
       - account_id
       - billing_period
-      - totals
+      - data
+      - has_more
+      - next_cursor
       properties:
         object:
-          const: resolution_usage
+          const: list
         account_id:
           type: string
           minLength: 1
           maxLength: 128
-          description: Authenticated account identity. It is never selected by a query parameter.
         billing_period:
           type: string
           pattern: ^\d{4}-(?:0[1-9]|1[0-2])$
-        totals:
-          $ref: '#/components/schemas/ResolutionUsageTotals'
+        data:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/ResolutionUsageEvent'
+        has_more:
+          type: boolean
+        next_cursor:
+          type:
+          - string
+          - 'null'
+          minLength: 1
+          maxLength: 500
+          pattern: ^[A-Za-z0-9_-]+$
+          description: Opaque continuation cursor when has_more is true; otherwise null.
+    ResolutionUsageProblemResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - error
+      properties:
+        error:
+          type: object
+          additionalProperties: false
+          required:
+          - code
+          - message
+          properties:
+            code:
+              type: string
+              enum:
+              - INVALID_USAGE_QUERY
+              - INVALID_USAGE_CURSOR
+              - USAGE_UNAVAILABLE
+              - USAGE_INTEGRITY_FAILED
+            message:
+              type: string
     ResolutionUsageEvent:
       type: object
       additionalProperties: false
@@ -170,6 +371,62 @@ components:
           enum:
           - 0
           - 1
+    ResolutionUsageSummary:
+      type: object
+      additionalProperties: false
+      required:
+      - object
+      - account_id
+      - billing_period
+      - totals
+      properties:
+        object:
+          const: resolution_usage
+        account_id:
+          type: string
+          minLength: 1
+          maxLength: 128
+          description: Authenticated account identity. It is never selected by a query parameter.
+        billing_period:
+          type: string
+          pattern: ^\d{4}-(?:0[1-9]|1[0-2])$
+        totals:
+          $ref: '#/components/schemas/ResolutionUsageTotals'
+    AssessmentId:
+      type: string
+      pattern: ^ra_[a-f0-9]{32}$
+      examples:
+      - ra_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    ResolutionUsageTotals:
+      type: object
+      additionalProperties: false
+      required:
+      - released
+      - billable
+      - evaluation_credit
+      - measurement
+      - adjusted_units
+      properties:
+        released:
+          type: integer
+          minimum: 0
+          description: Number of released usage evidence events before adjustments.
+        billable:
+          type: integer
+          minimum: 0
+          description: Effective billable units after append-only adjustments.
+        evaluation_credit:
+          type: integer
+          minimum: 0
+          description: Effective non-billable evaluation-credit units after adjustments.
+        measurement:
+          type: integer
+          minimum: 0
+          description: Effective isolated cost-measurement units after adjustments.
+        adjusted_units:
+          type: integer
+          minimum: 0
+          description: Units removed by append-only adjustments in this reconciled period.
     ErrorResponse:
       type: object
       additionalProperties: false
@@ -207,99 +464,18 @@ components:
             docs_url:
               type: string
               format: uri
-    ResolutionUsageProblemResponse:
-      type: object
-      additionalProperties: false
-      required:
-      - error
-      properties:
-        error:
-          type: object
-          additionalProperties: false
-          required:
-          - code
-          - message
-          properties:
-            code:
-              type: string
-              enum:
-              - INVALID_USAGE_QUERY
-              - INVALID_USAGE_CURSOR
-              - USAGE_UNAVAILABLE
-              - USAGE_INTEGRITY_FAILED
-            message:
-              type: string
-    ResolutionUsageEventsPage:
-      type: object
-      additionalProperties: false
-      required:
-      - object
-      - account_id
-      - billing_period
-      - data
-      - has_more
-      - next_cursor
-      properties:
-        object:
-          const: list
-        account_id:
-          type: string
-          minLength: 1
-          maxLength: 128
-        billing_period:
-          type: string
-          pattern: ^\d{4}-(?:0[1-9]|1[0-2])$
-        data:
-          type: array
-          maxItems: 100
-          items:
-            $ref: '#/components/schemas/ResolutionUsageEvent'
-        has_more:
-          type: boolean
-        next_cursor:
-          type:
-          - string
-          - 'null'
-          minLength: 1
-          maxLength: 500
-          pattern: ^[A-Za-z0-9_-]+$
-          description: Opaque continuation cursor when has_more is true; otherwise null.
-    ResolutionUsageTotals:
-      type: object
-      additionalProperties: false
-      required:
-      - released
-      - billable
-      - evaluation_credit
-      - measurement
-      - adjusted_units
-      properties:
-        released:
-          type: integer
-          minimum: 0
-          description: Number of released usage evidence events before adjustments.
-        billable:
-          type: integer
-          minimum: 0
-          description: Effective billable units after append-only adjustments.
-        evaluation_credit:
-          type: integer
-          minimum: 0
-          description: Effective non-billable evaluation-credit units after adjustments.
-        measurement:
-          type: integer
-          minimum: 0
-          description: Effective isolated cost-measurement units after adjustments.
-        adjusted_units:
-          type: integer
-          minimum: 0
-          description: Units removed by append-only adjustments in this reconciled period.
-    AssessmentId:
-      type: string
-      pattern: ^ra_[a-f0-9]{32}$
-      examples:
-      - ra_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
   examples:
+    ResolutionUsageSummary:
+      value:
+        object: resolution_usage
+        account_id: account-example
+        billing_period: 2026-08
+        totals:
+          released: 2
+          billable: 1
+          evaluation_credit: 0
+          measurement: 0
+          adjusted_units: 1
     ResolutionUsageEventsPage:
       value:
         object: list
@@ -326,182 +502,6 @@ components:
           effective_quantity: 0
         has_more: false
         next_cursor: null
-    ResolutionUsageSummary:
-      value:
-        object: resolution_usage
-        account_id: account-example
-        billing_period: 2026-08
-        totals:
-          released: 2
-          billable: 1
-          evaluation_credit: 0
-          measurement: 0
-          adjusted_units: 1
-  responses:
-    ResolutionUsageBadRequest:
-      description: The query is invalid, the required events period is absent, the cursor is invalid for this account and period, or a token was supplied in the URL.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-          example:
-            error:
-              code: INVALID_TOKEN
-              message: Send the token in the Authorization header, never the URL.
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/ResolutionUsageProblemResponse'
-          examples:
-            invalidQuery:
-              value:
-                error:
-                  code: INVALID_USAGE_QUERY
-                  message: period must use YYYY-MM.
-            invalidCursor:
-              value:
-                error:
-                  code: INVALID_USAGE_CURSOR
-                  message: The usage cursor is invalid for this account and month.
-    RateLimited:
-      description: The current shared per-token or per-account traffic bound was reached. Rate limiting is not purchased usage.
-      headers:
-        Retry-After:
-          $ref: '#/components/headers/Retry-After'
-        RateLimit-Limit:
-          $ref: '#/components/headers/RateLimit-Limit'
-        RateLimit-Remaining:
-          $ref: '#/components/headers/RateLimit-Remaining'
-        RateLimit-Reset:
-          $ref: '#/components/headers/RateLimit-Reset'
-        RateLimit-Scope:
-          $ref: '#/components/headers/RateLimit-Scope'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-          example:
-            error:
-              code: RATE_LIMITED
-              message: Too many requests — slow down and retry.
-    ResolutionUsageForbidden:
-      description: The credential is valid but is not a live token carrying usage:read.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-          example:
-            error:
-              code: INSUFFICIENT_SCOPE
-              message: A live token with usage:read is required.
-    ResolutionUsageUnavailable:
-      description: The reconciled usage view could not be read safely or failed its integrity/parity checks. No partial usage data is returned.
-      headers:
-        RateLimit-Limit:
-          $ref: '#/components/headers/RateLimit-Limit'
-        RateLimit-Remaining:
-          $ref: '#/components/headers/RateLimit-Remaining'
-        RateLimit-Reset:
-          $ref: '#/components/headers/RateLimit-Reset'
-        RateLimit-Scope:
-          $ref: '#/components/headers/RateLimit-Scope'
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/ResolutionUsageProblemResponse'
-          examples:
-            integrityFailure:
-              value:
-                error:
-                  code: USAGE_INTEGRITY_FAILED
-                  message: Resolution usage is temporarily unavailable.
-            unavailable:
-              value:
-                error:
-                  code: USAGE_UNAVAILABLE
-                  message: Resolution usage is temporarily unavailable.
-    InvalidToken:
-      description: Unknown, malformed, expired or revoked token. These cases are deliberately indistinguishable.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-          example:
-            error:
-              code: INVALID_TOKEN
-              message: The bearer token is invalid, expired or revoked.
-  parameters:
-    UsagePeriodRequired:
-      name: period
-      in: query
-      required: true
-      description: Required UTC calendar month in YYYY-MM form.
-      schema:
-        type: string
-        pattern: ^\d{4}-(?:0[1-9]|1[0-2])$
-        examples:
-        - 2026-08
-    UsageLimit:
-      name: limit
-      in: query
-      required: false
-      description: Maximum number of usage events returned in one page.
-      schema:
-        type: integer
-        minimum: 1
-        maximum: 100
-        default: 50
-    UsageCursor:
-      name: cursor
-      in: query
-      required: false
-      description: Opaque cursor returned by the preceding page for the same authenticated account and period.
-      schema:
-        type: string
-        minLength: 1
-        maxLength: 500
-        pattern: ^[A-Za-z0-9_-]+$
-    UsagePeriodOptional:
-      name: period
-      in: query
-      required: false
-      description: UTC calendar month in YYYY-MM form. Defaults to the current UTC month on the summary route.
-      schema:
-        type: string
-        pattern: ^\d{4}-(?:0[1-9]|1[0-2])$
-        examples:
-        - 2026-08
-  headers:
-    RateLimit-Scope:
-      description: The read or request bucket consumed by this authenticated operation.
-      x-availability: IMPLEMENTED_FEATURE_GATED
-      schema:
-        type: string
-        enum:
-        - read
-        - request
-    RateLimit-Limit:
-      description: Maximum requests in the token's current 60-second read or request bucket.
-      x-availability: IMPLEMENTED_FEATURE_GATED
-      schema:
-        type: integer
-        minimum: 0
-    Retry-After:
-      description: Whole seconds to wait before retrying. Implemented on 429 responses.
-      schema:
-        type: integer
-        minimum: 1
-    RateLimit-Reset:
-      description: Whole seconds until the current token and class window resets.
-      x-availability: IMPLEMENTED_FEATURE_GATED
-      schema:
-        type: integer
-        minimum: 0
-    RateLimit-Remaining:
-      description: Requests remaining in the current token and class bucket.
-      x-availability: IMPLEMENTED_FEATURE_GATED
-      schema:
-        type: integer
-        minimum: 0
   securitySchemes:
     bearerToken:
       type: http
