@@ -231,111 +231,107 @@ paths:
         '429':
           $ref: '#/components/responses/RateLimited'
 components:
-  schemas:
-    WebhookDelivery:
-      type: object
-      additionalProperties: false
-      required:
-      - delivery_id
-      - endpoint_id
-      - assessment_id
-      - event
-      - state
-      - created_at
-      - completed_at
-      - next_attempt_at
-      - attempt_count
-      - redelivery_of
-      - attempts
-      - billable
-      properties:
-        delivery_id:
-          $ref: '#/components/schemas/WebhookDeliveryId'
-        endpoint_id:
-          $ref: '#/components/schemas/WebhookEndpointId'
-        assessment_id:
-          $ref: '#/components/schemas/AssessmentId'
-        event:
-          $ref: '#/components/schemas/WebhookEvent'
-        state:
-          type: string
-          enum:
-          - pending
-          - delivered
-          - failed
-          - cancelled
-        created_at:
-          type: string
-          format: date-time
-        completed_at:
-          type:
-          - string
-          - 'null'
-          format: date-time
-        next_attempt_at:
-          type:
-          - string
-          - 'null'
-          format: date-time
-        attempt_count:
-          type: integer
-          minimum: 0
-          maximum: 5
-        redelivery_of:
-          oneOf:
-          - $ref: '#/components/schemas/WebhookDeliveryId'
-          - type: 'null'
+  headers:
+    RateLimit-Scope:
+      description: The read or request bucket consumed by this authenticated operation.
+      x-availability: IMPLEMENTED_FEATURE_GATED
+      schema:
+        type: string
+        enum:
+        - read
+        - request
+    Retry-After:
+      description: Whole seconds to wait before retrying. Implemented on 429 responses.
+      schema:
+        type: integer
+        minimum: 1
+    RateLimit-Remaining:
+      description: Requests remaining in the current token and class bucket.
+      x-availability: IMPLEMENTED_FEATURE_GATED
+      schema:
+        type: integer
+        minimum: 0
+    RateLimit-Reset:
+      description: Whole seconds until the current token and class window resets.
+      x-availability: IMPLEMENTED_FEATURE_GATED
+      schema:
+        type: integer
+        minimum: 0
+    RateLimit-Limit:
+      description: Maximum requests in the token's current 60-second read or request bucket.
+      x-availability: IMPLEMENTED_FEATURE_GATED
+      schema:
+        type: integer
+        minimum: 0
+  examples:
+    WebhookDeliveryList:
+      value:
+      - delivery_id: wd_0123456789abcdef0123456789abcdef
+        endpoint_id: whe_0123456789abcdef0123456789abcdef
+        assessment_id: ra_0123456789abcdef0123456789abcdef
+        event: assessment.released
+        state: delivered
+        created_at: '2026-08-03T19:00:00.000Z'
+        completed_at: '2026-08-03T19:01:00.000Z'
+        next_attempt_at: null
+        attempt_count: 1
+        redelivery_of: null
         attempts:
-          type: array
-          maxItems: 5
-          items:
-            $ref: '#/components/schemas/WebhookDeliveryAttempt'
-        billable:
-          const: false
-    WebhookDisabledNotice:
-      type: object
-      additionalProperties: false
-      required:
-      - created_at
-      - reason
-      properties:
-        created_at:
-          type: string
-          format: date-time
-        reason:
-          type: string
-    WebhookErrorResponse:
-      type: object
-      additionalProperties: false
-      required:
-      - error
-      properties:
-        error:
-          type: object
-          additionalProperties: false
-          required:
-          - code
-          - message
-          properties:
-            code:
-              type: string
-              enum:
-              - UNSAFE_WEBHOOK_TARGET
-              - WEBHOOK_ENDPOINT_LIMIT
-            message:
-              type: string
-            detail:
-              type: string
-              maxLength: 500
-            docs_url:
-              type: string
-              format: uri
-    WebhookEvent:
-      type: string
-      enum:
-      - assessment.released
-      - assessment.withheld
-      - assessment.failed
+        - attempt_id: wha_0123456789abcdef0123456789abcdef
+          attempt_number: 1
+          started_at: '2026-08-03T19:01:00.000Z'
+          completed_at: '2026-08-03T19:01:00.000Z'
+          signature_timestamp: 1785783660
+          outcome: success
+          http_status: 204
+          error_code: null
+        billable: false
+    WebhookRedelivery:
+      value:
+        delivery_id: wd_fedcba9876543210fedcba9876543210
+        endpoint_id: whe_0123456789abcdef0123456789abcdef
+        assessment_id: ra_0123456789abcdef0123456789abcdef
+        event: assessment.released
+        state: pending
+        created_at: '2026-08-03T20:00:00.000Z'
+        completed_at: null
+        next_attempt_at: '2026-08-03T20:01:00.000Z'
+        attempt_count: 0
+        redelivery_of: wd_0123456789abcdef0123456789abcdef
+        attempts: []
+        billable: false
+    WebhookEndpointList:
+      value:
+      - endpoint_id: whe_0123456789abcdef0123456789abcdef
+        url: https://hooks.example.com/scanverity
+        description: production resolution receiver
+        events:
+        - assessment.released
+        - assessment.withheld
+        - assessment.failed
+        environment: live
+        status: enabled
+        created_at: '2026-08-03T19:00:00.000Z'
+        last_success_at: null
+        disabled_at: null
+        disabled_reason: null
+    WebhookEndpointCreated:
+      value:
+        endpoint_id: whe_0123456789abcdef0123456789abcdef
+        url: https://hooks.example.com/scanverity
+        description: production resolution receiver
+        events:
+        - assessment.released
+        - assessment.withheld
+        - assessment.failed
+        environment: live
+        status: enabled
+        created_at: '2026-08-03T19:00:00.000Z'
+        last_success_at: null
+        disabled_at: null
+        disabled_reason: null
+        signing_secret: svrwhsec_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+  schemas:
     WebhookDeliveryAttempt:
       type: object
       additionalProperties: false
@@ -386,68 +382,12 @@ components:
           type:
           - string
           - 'null'
-    WebhookDeliveryId:
+    WebhookEvent:
       type: string
-      pattern: ^wd_[a-f0-9]{32}$
-    WebhookEndpoint:
-      type: object
-      additionalProperties: false
-      required:
-      - endpoint_id
-      - url
-      - description
-      - events
-      - environment
-      - status
-      - created_at
-      - last_success_at
-      - disabled_at
-      - disabled_reason
-      properties:
-        endpoint_id:
-          $ref: '#/components/schemas/WebhookEndpointId'
-        url:
-          type: string
-          format: uri
-        description:
-          type:
-          - string
-          - 'null'
-        events:
-          type: array
-          minItems: 1
-          maxItems: 3
-          items:
-            $ref: '#/components/schemas/WebhookEvent'
-        environment:
-          type: string
-          enum:
-          - live
-          - sandbox
-        status:
-          type: string
-          enum:
-          - enabled
-          - disabled
-        created_at:
-          type: string
-          format: date-time
-        last_success_at:
-          type:
-          - string
-          - 'null'
-          format: date-time
-        disabled_at:
-          type:
-          - string
-          - 'null'
-          format: date-time
-        disabled_reason:
-          type:
-          - string
-          - 'null'
-        disabled_notice:
-          $ref: '#/components/schemas/WebhookDisabledNotice'
+      enum:
+      - assessment.released
+      - assessment.withheld
+      - assessment.failed
     RegisterWebhookEndpointRequest:
       type: object
       additionalProperties: false
@@ -527,14 +467,6 @@ components:
           type: string
           pattern: ^svrwhsec_[A-Za-z0-9_-]{43}$
           description: Reveal-once secret. It is encrypted at rest and omitted from every later response.
-    WebhookEndpointId:
-      type: string
-      pattern: ^whe_[a-f0-9]{32}$
-    AssessmentId:
-      type: string
-      pattern: ^ra_[a-f0-9]{32}$
-      examples:
-      - ra_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
     ErrorResponse:
       type: object
       additionalProperties: false
@@ -572,74 +504,174 @@ components:
             docs_url:
               type: string
               format: uri
-  examples:
-    WebhookDeliveryList:
-      value:
-      - delivery_id: wd_0123456789abcdef0123456789abcdef
-        endpoint_id: whe_0123456789abcdef0123456789abcdef
-        assessment_id: ra_0123456789abcdef0123456789abcdef
-        event: assessment.released
-        state: delivered
-        created_at: '2026-08-03T19:00:00.000Z'
-        completed_at: '2026-08-03T19:01:00.000Z'
-        next_attempt_at: null
-        attempt_count: 1
-        redelivery_of: null
+    AssessmentId:
+      type: string
+      pattern: ^ra_[a-f0-9]{32}$
+      examples:
+      - ra_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    WebhookErrorResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - error
+      properties:
+        error:
+          type: object
+          additionalProperties: false
+          required:
+          - code
+          - message
+          properties:
+            code:
+              type: string
+              enum:
+              - UNSAFE_WEBHOOK_TARGET
+              - WEBHOOK_ENDPOINT_LIMIT
+            message:
+              type: string
+            detail:
+              type: string
+              maxLength: 500
+            docs_url:
+              type: string
+              format: uri
+    WebhookEndpointId:
+      type: string
+      pattern: ^whe_[a-f0-9]{32}$
+    WebhookDisabledNotice:
+      type: object
+      additionalProperties: false
+      required:
+      - created_at
+      - reason
+      properties:
+        created_at:
+          type: string
+          format: date-time
+        reason:
+          type: string
+    WebhookDelivery:
+      type: object
+      additionalProperties: false
+      required:
+      - delivery_id
+      - endpoint_id
+      - assessment_id
+      - event
+      - state
+      - created_at
+      - completed_at
+      - next_attempt_at
+      - attempt_count
+      - redelivery_of
+      - attempts
+      - billable
+      properties:
+        delivery_id:
+          $ref: '#/components/schemas/WebhookDeliveryId'
+        endpoint_id:
+          $ref: '#/components/schemas/WebhookEndpointId'
+        assessment_id:
+          $ref: '#/components/schemas/AssessmentId'
+        event:
+          $ref: '#/components/schemas/WebhookEvent'
+        state:
+          type: string
+          enum:
+          - pending
+          - delivered
+          - failed
+          - cancelled
+        created_at:
+          type: string
+          format: date-time
+        completed_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        next_attempt_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        attempt_count:
+          type: integer
+          minimum: 0
+          maximum: 5
+        redelivery_of:
+          oneOf:
+          - $ref: '#/components/schemas/WebhookDeliveryId'
+          - type: 'null'
         attempts:
-        - attempt_id: wha_0123456789abcdef0123456789abcdef
-          attempt_number: 1
-          started_at: '2026-08-03T19:01:00.000Z'
-          completed_at: '2026-08-03T19:01:00.000Z'
-          signature_timestamp: 1785783660
-          outcome: success
-          http_status: 204
-          error_code: null
-        billable: false
-    WebhookEndpointCreated:
-      value:
-        endpoint_id: whe_0123456789abcdef0123456789abcdef
-        url: https://hooks.example.com/scanverity
-        description: production resolution receiver
+          type: array
+          maxItems: 5
+          items:
+            $ref: '#/components/schemas/WebhookDeliveryAttempt'
+        billable:
+          const: false
+    WebhookEndpoint:
+      type: object
+      additionalProperties: false
+      required:
+      - endpoint_id
+      - url
+      - description
+      - events
+      - environment
+      - status
+      - created_at
+      - last_success_at
+      - disabled_at
+      - disabled_reason
+      properties:
+        endpoint_id:
+          $ref: '#/components/schemas/WebhookEndpointId'
+        url:
+          type: string
+          format: uri
+        description:
+          type:
+          - string
+          - 'null'
         events:
-        - assessment.released
-        - assessment.withheld
-        - assessment.failed
-        environment: live
-        status: enabled
-        created_at: '2026-08-03T19:00:00.000Z'
-        last_success_at: null
-        disabled_at: null
-        disabled_reason: null
-        signing_secret: svrwhsec_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-    WebhookRedelivery:
-      value:
-        delivery_id: wd_fedcba9876543210fedcba9876543210
-        endpoint_id: whe_0123456789abcdef0123456789abcdef
-        assessment_id: ra_0123456789abcdef0123456789abcdef
-        event: assessment.released
-        state: pending
-        created_at: '2026-08-03T20:00:00.000Z'
-        completed_at: null
-        next_attempt_at: '2026-08-03T20:01:00.000Z'
-        attempt_count: 0
-        redelivery_of: wd_0123456789abcdef0123456789abcdef
-        attempts: []
-        billable: false
-    WebhookEndpointList:
-      value:
-      - endpoint_id: whe_0123456789abcdef0123456789abcdef
-        url: https://hooks.example.com/scanverity
-        description: production resolution receiver
-        events:
-        - assessment.released
-        - assessment.withheld
-        - assessment.failed
-        environment: live
-        status: enabled
-        created_at: '2026-08-03T19:00:00.000Z'
-        last_success_at: null
-        disabled_at: null
-        disabled_reason: null
+          type: array
+          minItems: 1
+          maxItems: 3
+          items:
+            $ref: '#/components/schemas/WebhookEvent'
+        environment:
+          type: string
+          enum:
+          - live
+          - sandbox
+        status:
+          type: string
+          enum:
+          - enabled
+          - disabled
+        created_at:
+          type: string
+          format: date-time
+        last_success_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        disabled_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        disabled_reason:
+          type:
+          - string
+          - 'null'
+        disabled_notice:
+          $ref: '#/components/schemas/WebhookDisabledNotice'
+    WebhookDeliveryId:
+      type: string
+      pattern: ^wd_[a-f0-9]{32}$
   responses:
     WebhookEndpointLimit:
       description: The account already retains ten webhook endpoint records in this token environment.
@@ -660,8 +692,14 @@ components:
             error:
               code: WEBHOOK_ENDPOINT_LIMIT
               message: The webhook endpoint limit for this environment was reached.
-    WebhookNotFound:
-      description: Unknown endpoint or delivery ID, an identifier owned by another account or environment, a disabled endpoint for redelivery, or a still-pending source delivery. These cases are deliberately indistinguishable.
+    BadRequest:
+      description: INVALID_REQUEST, INVALID_MARKET, INVALID_IDEMPOTENCY_KEY, or a token supplied in the URL.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    UnsafeWebhookTarget:
+      description: The destination is not a safely resolved public HTTPS endpoint.
       headers:
         RateLimit-Limit:
           $ref: '#/components/headers/RateLimit-Limit'
@@ -674,11 +712,11 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: '#/components/schemas/WebhookErrorResponse'
           example:
             error:
-              code: NOT_FOUND
-              message: The requested webhook resource was not found.
+              code: UNSAFE_WEBHOOK_TARGET
+              message: The webhook destination is not a safe public HTTPS endpoint.
     RateLimited:
       description: The current shared per-token or per-account traffic bound was reached. Rate limiting is not purchased usage.
       headers:
@@ -700,60 +738,6 @@ components:
             error:
               code: RATE_LIMITED
               message: Too many requests — slow down and retry.
-    InvalidToken:
-      description: Unknown, malformed, expired or revoked token. These cases are deliberately indistinguishable.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-          example:
-            error:
-              code: INVALID_TOKEN
-              message: The bearer token is invalid, expired or revoked.
-    UnsafeWebhookTarget:
-      description: The destination is not a safely resolved public HTTPS endpoint.
-      headers:
-        RateLimit-Limit:
-          $ref: '#/components/headers/RateLimit-Limit'
-        RateLimit-Remaining:
-          $ref: '#/components/headers/RateLimit-Remaining'
-        RateLimit-Reset:
-          $ref: '#/components/headers/RateLimit-Reset'
-        RateLimit-Scope:
-          $ref: '#/components/headers/RateLimit-Scope'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/WebhookErrorResponse'
-          example:
-            error:
-              code: UNSAFE_WEBHOOK_TARGET
-              message: The webhook destination is not a safe public HTTPS endpoint.
-    InternalError:
-      description: The request could not be completed safely. No assessment is released and the request is not billable.
-      headers:
-        RateLimit-Limit:
-          $ref: '#/components/headers/RateLimit-Limit'
-        RateLimit-Remaining:
-          $ref: '#/components/headers/RateLimit-Remaining'
-        RateLimit-Reset:
-          $ref: '#/components/headers/RateLimit-Reset'
-        RateLimit-Scope:
-          $ref: '#/components/headers/RateLimit-Scope'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-          example:
-            error:
-              code: INTERNAL_ERROR
-              message: The request could not be completed safely.
-    BadRequest:
-      description: INVALID_REQUEST, INVALID_MARKET, INVALID_IDEMPOTENCY_KEY, or a token supplied in the URL.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
     InsufficientScope:
       description: The credential is valid but lacks the operation's scope.
       headers:
@@ -774,46 +758,55 @@ components:
               code: INSUFFICIENT_SCOPE
               message: This token lacks the required scope.
               detail: This token lacks the 'resolution:request' scope.
-  headers:
-    RateLimit-Scope:
-      description: The read or request bucket consumed by this authenticated operation.
-      x-availability: IMPLEMENTED_FEATURE_GATED
-      schema:
-        type: string
-        enum:
-        - read
-        - request
-    RateLimit-Limit:
-      description: Maximum requests in the token's current 60-second read or request bucket.
-      x-availability: IMPLEMENTED_FEATURE_GATED
-      schema:
-        type: integer
-        minimum: 0
-    Retry-After:
-      description: Whole seconds to wait before retrying. Implemented on 429 responses.
-      schema:
-        type: integer
-        minimum: 1
-    RateLimit-Reset:
-      description: Whole seconds until the current token and class window resets.
-      x-availability: IMPLEMENTED_FEATURE_GATED
-      schema:
-        type: integer
-        minimum: 0
-    RateLimit-Remaining:
-      description: Requests remaining in the current token and class bucket.
-      x-availability: IMPLEMENTED_FEATURE_GATED
-      schema:
-        type: integer
-        minimum: 0
+    WebhookNotFound:
+      description: Unknown endpoint or delivery ID, an identifier owned by another account or environment, a disabled endpoint for redelivery, or a still-pending source delivery. These cases are deliberately indistinguishable.
+      headers:
+        RateLimit-Limit:
+          $ref: '#/components/headers/RateLimit-Limit'
+        RateLimit-Remaining:
+          $ref: '#/components/headers/RateLimit-Remaining'
+        RateLimit-Reset:
+          $ref: '#/components/headers/RateLimit-Reset'
+        RateLimit-Scope:
+          $ref: '#/components/headers/RateLimit-Scope'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: NOT_FOUND
+              message: The requested webhook resource was not found.
+    InvalidToken:
+      description: Unknown, malformed, expired or revoked token. These cases are deliberately indistinguishable.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: INVALID_TOKEN
+              message: The bearer token is invalid, expired or revoked.
+    InternalError:
+      description: The request could not be completed safely. No assessment is released and the request is not billable.
+      headers:
+        RateLimit-Limit:
+          $ref: '#/components/headers/RateLimit-Limit'
+        RateLimit-Remaining:
+          $ref: '#/components/headers/RateLimit-Remaining'
+        RateLimit-Reset:
+          $ref: '#/components/headers/RateLimit-Reset'
+        RateLimit-Scope:
+          $ref: '#/components/headers/RateLimit-Scope'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: INTERNAL_ERROR
+              message: The request could not be completed safely.
   parameters:
-    WebhookDeliveryId:
-      name: delivery_id
-      in: path
-      required: true
-      description: Stable webhook delivery-group identifier. Automatic attempts reuse it; manual redelivery creates a new identifier linked by redelivery_of.
-      schema:
-        $ref: '#/components/schemas/WebhookDeliveryId'
     WebhookEndpointId:
       name: endpoint_id
       in: path
@@ -821,6 +814,13 @@ components:
       description: Account- and environment-scoped webhook endpoint identifier.
       schema:
         $ref: '#/components/schemas/WebhookEndpointId'
+    WebhookDeliveryId:
+      name: delivery_id
+      in: path
+      required: true
+      description: Stable webhook delivery-group identifier. Automatic attempts reuse it; manual redelivery creates a new identifier linked by redelivery_of.
+      schema:
+        $ref: '#/components/schemas/WebhookDeliveryId'
   securitySchemes:
     bearerToken:
       type: http
