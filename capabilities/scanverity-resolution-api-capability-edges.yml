@@ -1,0 +1,38 @@
+slug: scanverity-resolution-api
+provider: Scanverity Resolution API
+generated_by: planning/capability-mapping/scripts/classify_capabilities.py
+model: claude-opus-5
+frame:
+- Software & Technology
+min_confidence: 0.7
+capability_model:
+  source: https://github.com/vincentmakes/turbo-ea-capabilities
+  license: CC-BY-4.0
+  attribution: Turbo EA Capabilities by Vincent Verdet — Turbo EA, https://github.com/vincentmakes/turbo-ea-capabilities,
+    CC BY 4.0
+  notice: NOTICE
+edge_count: 2
+edges:
+- tag: Webhook Endpoints
+  spec_file: scanverity-resolution-api-webhook-endpoints-api-openapi.yml
+  capability_id: BC-4270.80
+  capability_id_l1: BC-4270
+  capability_name: Webhook & Event Subscription Management
+  confidence: 0.78
+  evidence: POST /v1/webhook-endpoints Register a signed webhook endpoint; GET /v1/webhook-endpoints/{endpoint_id}/deliveries
+    List append-only webhook delivery evidence; POST .../redeliver/{delivery_id} Request an audited manual
+    redelivery
+  reason: Full lifecycle of outbound webhook subscriptions plus delivery-reliability evidence and manual
+    redelivery, exposed to external API consumers — matches Webhook & Event Subscription Management. Some
+    risk this is judged mere plumbing.
+- tag: Resolution usage
+  spec_file: scanverity-resolution-api-resolution-usage-api-openapi.yml
+  capability_id: BC-4250.10
+  capability_id_l1: BC-4250
+  capability_name: Usage Metering
+  confidence: 0.72
+  evidence: GET /v1/usage Read reconciled monthly usage totals; GET /v1/usage/events List reconciled usage
+    evidence events; schemas ResolutionUsageTotals, MeteringEvaluationCredit
+  reason: Operations expose metered consumption events and reconciled monthly totals for the API product
+    — ingestion/aggregation of usage events feeding rating and billing. Read-only reporting of metering
+    rather than the metering ingestion itself, so confidence is moderate.
