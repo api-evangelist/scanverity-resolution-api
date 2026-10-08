@@ -190,6 +190,10 @@ x-generated:
   confidence: 95
   at: '2026-09-04T10:04:52.904Z'
 common:
+- type: Plans
+  url: plans/scanverity-resolution-api-plans-pricing.yml
+- type: RateLimits
+  url: rate-limits/scanverity-resolution-api-rate-limits.yml
 - type: CapabilityMap
   url: capabilities/scanverity-resolution-api-capability-edges.yml
   name: Scanverity Resolution API Business Capability Map
