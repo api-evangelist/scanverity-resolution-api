@@ -111,3 +111,53 @@ related_subscription_products:
     - { name: Researcher, price: 49, currency: EUR, period: month }
     - { name: Professional, price: 129, currency: EUR, period: month, note: includes the separate Professional workspace API }
     - { name: Team, price: 349, currency: EUR, period: month }
+x-canonical:
+  generated: '2026-10-08'
+  vocabulary: all/0-working/economics/plans-canonical.yml
+  models:
+  - free
+  - hybrid
+  units: []
+  plans:
+  - name: Sandbox
+    access: other
+    model: free
+    model_how: derived
+    units: []
+    periods:
+    - month
+  - name: Production Evaluation
+    access: other
+    model: free
+    model_how: derived
+    units: []
+    periods:
+    - one-time
+  - name: Builder
+    access: other
+    model: hybrid
+    model_how: derived
+    units: []
+    periods:
+    - month
+  - name: Growth
+    access: other
+    model: hybrid
+    model_how: derived
+    units: []
+    periods:
+    - month
+  - name: Scale
+    access: other
+    model: hybrid
+    model_how: derived
+    units: []
+    periods:
+    - month
+  - name: Enterprise
+    access: other
+    model: hybrid
+    model_how: derived
+    units: []
+    periods:
+    - month
