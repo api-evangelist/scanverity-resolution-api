@@ -3,8 +3,22 @@ method: derived
 source: openapi/scanverity-resolution-api-openapi.json
 name: Scanverity Resolution API MCP candidate
 status: candidate
+provider_server:
+  note: >-
+    Scanverity now publishes its own hosted MCP server, separate from this derived candidate. Setup
+    and the approved-account requirement are at https://scanverity.com/connectors; adding the
+    connector does not grant API or paid access. The official MCP Registry lists
+    com.scanverity/resolution-rules and com.scanverity/public-market-discovery. Probed 2026-10-24
+    - https://scanverity.com/mcp returns 401 (exists, requires an approved account).
+  endpoint: https://scanverity.com/mcp
+  setup: https://scanverity.com/connectors
+  registry_names:
+  - com.scanverity/resolution-rules
+  - com.scanverity/public-market-discovery
+  verified: '2026-10-24'
 description: >-
-  Scanverity publishes NO MCP server. This is a derived candidate tool surface mapped one-to-one
+  DERIVED CANDIDATE, NOT SCANVERITY'S SERVER - Scanverity's own hosted MCP server is recorded under
+  provider_server above. As of 2026-09-04 Scanverity published no MCP server; this is a derived candidate tool surface mapped one-to-one
   from the published OpenAPI operations, recorded so the shape of a future server is legible. It is
   not an agent surface and must not be read as one -- no endpoint exists, and none is invented here.
 deployment:

@@ -190,6 +190,10 @@ x-generated:
   confidence: 95
   at: '2026-09-04T10:04:52.904Z'
 common:
+- type: MCPServer
+  url: https://scanverity.com/mcp
+  name: Scanverity hosted MCP server
+  description: Scanverity's own hosted MCP server (registry com.scanverity/resolution-rules). Requires an approved account; setup at https://scanverity.com/connectors. Adding the connector does not grant API or paid access.
 - type: Plans
   url: plans/scanverity-resolution-api-plans-pricing.yml
 - type: RateLimits

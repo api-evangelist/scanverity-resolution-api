@@ -2,8 +2,15 @@ generated: '2026-09-04'
 method: searched
 source: https://scanverity.com/en/pricing
 name: Scanverity Resolution API plans and pricing
+availability: closed to new buyers
+availability_note: >-
+  As of 2026-10-23 the Resolution API tiers below are reference private-beta rates. New production
+  evaluations and paid API pilots are closed; existing approved customers keep their agreed access.
+  Source - https://scanverity.com/en/pricing (verified 2026-10-24) and Scanverity (Mark J.F. Milczarek),
+  email 2026-10-23. The separate written review of one Polymarket contract (EUR 100 excluding VAT,
+  https://scanverity.com/written-research) is a human-scoped report, not API access.
 description: >-
-  Published, self-serve pricing in EUR. Two distinct ladders exist on one page: the human product
+  REFERENCE PRIVATE-BETA RATES, NOT AVAILABLE TO NEW BUYERS (see availability_note). Pricing in EUR. Two distinct ladders exist on one page: the human product
   subscriptions (Explorer through Team) and the usage-based Resolution API tiers. Only the API
   ladder governs this record's API; the subscription ladder is recorded for context because the
   Professional tier is what carries the separate legacy workspace API.
@@ -33,6 +40,7 @@ plans:
     validity: 30 days
     overage: null
     notes: No payment required. Released assessments are metered as evaluation_credit and bill zero.
+      Not currently offered to new customers (closed 2026-10-23).
   - name: Builder
     price: 100
     currency: EUR
